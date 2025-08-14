@@ -9,7 +9,7 @@ class OptionsManager {
   }
 
   async loadSettings() {
-    const result = await chrome.storage.sync.get(['aiApiKey', 'aiProvider']);
+    const result = await chrome.storage.sync.get(['aiApiKey', 'aiProvider', 'language']);
     
     if (result.aiProvider) {
       document.getElementById('ai-provider').value = result.aiProvider;
@@ -18,12 +18,17 @@ class OptionsManager {
     if (result.aiApiKey) {
       document.getElementById('api-key').value = result.aiApiKey;
     }
+    
+    if (result.language) {
+      document.getElementById('language-select').value = result.language;
+    }
   }
 
   setupEventListeners() {
     const saveBtn = document.getElementById('save-btn');
     const apiKeyInput = document.getElementById('api-key');
     const providerSelect = document.getElementById('ai-provider');
+    const languageSelect = document.getElementById('language-select');
 
     saveBtn.addEventListener('click', () => this.saveSettings());
     
@@ -35,6 +40,10 @@ class OptionsManager {
 
     providerSelect.addEventListener('change', () => {
       this.updateApiKeyPlaceholder();
+    });
+
+    languageSelect.addEventListener('change', () => {
+      this.saveLanguageSettings();
     });
 
     this.updateApiKeyPlaceholder();
@@ -51,9 +60,21 @@ class OptionsManager {
     }
   }
 
+  async saveLanguageSettings() {
+    const language = document.getElementById('language-select').value;
+    
+    try {
+      await chrome.storage.sync.set({ language });
+      this.showMessage('Language preference saved!', 'success');
+    } catch (error) {
+      this.showMessage('Error saving language: ' + error.message, 'error');
+    }
+  }
+
   async saveSettings() {
     const apiKey = document.getElementById('api-key').value.trim();
     const provider = document.getElementById('ai-provider').value;
+    const language = document.getElementById('language-select').value;
 
     if (!apiKey) {
       this.showMessage('Please enter an API key', 'error');
@@ -68,7 +89,8 @@ class OptionsManager {
     try {
       await chrome.storage.sync.set({
         aiApiKey: apiKey,
-        aiProvider: provider
+        aiProvider: provider,
+        language: language
       });
 
       const response = await chrome.runtime.sendMessage({

@@ -2,12 +2,104 @@ class PopupController {
   constructor() {
     this.selectedFormat = null;
     this.jobData = null;
+    this.currentLanguage = 'en';
+    this.translations = {
+      en: {
+        title: 'LinkedIn Job Analyzer',
+        predefined_title: '📋 Predefined Format',
+        predefined_desc: 'Customize which information to include:',
+        custom_title: '✨ Custom Format',
+        custom_desc: 'Describe what you want to focus on in your own words',
+        job_title_company: 'Job Title & Company',
+        salary_compensation: 'Salary & Compensation',
+        work_location: 'Work Location & Remote Options',
+        benefits_perks: 'Benefits & Perks',
+        required_skills: 'Required Skills & Experience',
+        team_culture: 'Team & Company Culture',
+        custom_placeholder: 'e.g., Focus on technical requirements and team structure',
+        generate_btn: 'Generate Summary',
+        analyzing: 'Analyzing job posting...',
+        job_summary_title: 'Job Summary:',
+        job_page_detected: '✅ LinkedIn job page detected! Choose a format to analyze this job posting.',
+        job_extracted: '✅ Job data extracted successfully! Ready to generate summary.',
+        refresh_guidance: 'Almost there! Click on any job posting to open the detailed view, then use this extension.',
+        navigate_guidance: 'Please navigate to LinkedIn Jobs:\n\n1. Go to linkedin.com/jobs\n2. Search for jobs\n3. Click on any job posting\n4. Then use this extension',
+        linkedin_guidance: 'Please navigate to a LinkedIn job posting:\n\n1. Go to www.linkedin.com/jobs or it.linkedin.com/jobs\n2. Search for jobs\n3. Click on any job posting\n4. The URL should look like: linkedin.com/jobs/view/123456789'
+      },
+      it: {
+        title: 'LinkedIn Job Analyzer',
+        predefined_title: '📋 Formato Predefinito',
+        predefined_desc: 'Personalizza quali informazioni includere:',
+        custom_title: '✨ Formato Personalizzato',
+        custom_desc: 'Descrivi su cosa vuoi concentrarti con le tue parole',
+        job_title_company: 'Titolo Lavoro e Azienda',
+        salary_compensation: 'Stipendio e Compensi',
+        work_location: 'Luogo di Lavoro e Remote Working',
+        benefits_perks: 'Benefit e Vantaggi',
+        required_skills: 'Competenze ed Esperienza Richieste',
+        team_culture: 'Team e Cultura Aziendale',
+        custom_placeholder: 'es. Concentrati sui requisiti tecnici e la struttura del team',
+        generate_btn: 'Genera Riassunto',
+        analyzing: 'Analizzando l\'offerta di lavoro...',
+        job_summary_title: 'Riassunto Lavoro:',
+        job_page_detected: '✅ Pagina lavoro LinkedIn rilevata! Scegli un formato per analizzare questa offerta.',
+        job_extracted: '✅ Dati del lavoro estratti con successo! Pronto per generare il riassunto.',
+        refresh_guidance: 'Ci siamo quasi! Clicca su qualsiasi offerta di lavoro per aprire la vista dettagliata, poi usa questa estensione.',
+        navigate_guidance: 'Vai su LinkedIn Jobs:\n\n1. Vai su linkedin.com/jobs\n2. Cerca lavori\n3. Clicca su qualsiasi offerta di lavoro\n4. Poi usa questa estensione',
+        linkedin_guidance: 'Vai su una pagina di lavoro LinkedIn:\n\n1. Vai su www.linkedin.com/jobs o it.linkedin.com/jobs\n2. Cerca lavori\n3. Clicca su qualsiasi offerta di lavoro\n4. L\'URL dovrebbe essere: linkedin.com/jobs/view/123456789'
+      }
+    };
     this.init();
   }
 
-  init() {
+  async init() {
+    await this.loadLanguagePreference();
     this.setupEventListeners();
+    this.updateLanguageUI();
     this.checkCurrentTab();
+  }
+
+  async loadLanguagePreference() {
+    try {
+      const result = await chrome.storage.sync.get(['language']);
+      this.currentLanguage = result.language || 'en';
+    } catch (error) {
+      console.error('Failed to load language preference:', error);
+      this.currentLanguage = 'en';
+    }
+  }
+
+  async saveLanguagePreference(language) {
+    try {
+      await chrome.storage.sync.set({ language });
+      this.currentLanguage = language;
+    } catch (error) {
+      console.error('Failed to save language preference:', error);
+    }
+  }
+
+  updateLanguageUI() {
+    // Update language buttons
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === this.currentLanguage);
+    });
+
+    // Update text elements
+    document.querySelectorAll('[data-text]').forEach(element => {
+      const key = element.dataset.text;
+      if (this.translations[this.currentLanguage][key]) {
+        element.textContent = this.translations[this.currentLanguage][key];
+      }
+    });
+
+    // Update placeholder
+    const textarea = document.getElementById('custom-prompt');
+    if (textarea) {
+      const key = textarea.dataset.placeholder;
+      if (key && this.translations[this.currentLanguage][key]) {
+        textarea.placeholder = this.translations[this.currentLanguage][key];
+      }
+    }
   }
 
   setupEventListeners() {
@@ -34,6 +126,17 @@ class PopupController {
 
     document.getElementById('custom-prompt').addEventListener('input', () => {
       this.updateButtonState();
+    });
+
+    // Language switcher event listeners
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const selectedLang = btn.dataset.lang;
+        if (selectedLang !== this.currentLanguage) {
+          await this.saveLanguagePreference(selectedLang);
+          this.updateLanguageUI();
+        }
+      });
     });
   }
 
@@ -88,12 +191,12 @@ class PopupController {
     
     if (currentUrl.includes('linkedin.com')) {
       if (currentUrl.includes('/jobs/')) {
-        guidance = `📍 Almost there! Click on any job posting to open the detailed view, then use this extension.`;
+        guidance = `📍 ${this.translations[this.currentLanguage].refresh_guidance}`;
       } else {
-        guidance = `📍 Please navigate to LinkedIn Jobs:\n\n1. Go to linkedin.com/jobs\n2. Search for jobs\n3. Click on any job posting\n4. Then use this extension`;
+        guidance = `📍 ${this.translations[this.currentLanguage].navigate_guidance}`;
       }
     } else {
-      guidance = `📍 Please navigate to a LinkedIn job posting:\n\n1. Go to www.linkedin.com/jobs or it.linkedin.com/jobs\n2. Search for jobs\n3. Click on any job posting\n4. The URL should look like: linkedin.com/jobs/view/123456789`;
+      guidance = `📍 ${this.translations[this.currentLanguage].linkedin_guidance}`;
     }
     
     this.showInfo(guidance);
@@ -102,7 +205,7 @@ class PopupController {
   showJobPageDetected() {
     const infoDiv = document.getElementById('info');
     if (infoDiv) {
-      infoDiv.innerHTML = '✅ LinkedIn job page detected! Choose a format to analyze this job posting.';
+      infoDiv.innerHTML = this.translations[this.currentLanguage].job_page_detected;
       infoDiv.style.display = 'block';
       infoDiv.className = 'info success';
     }
@@ -153,15 +256,21 @@ class PopupController {
                                this.jobData.description.length > 50;
     
     if (hasValidTitle && hasValidCompany && hasValidDescription) {
-      this.showInfo('✅ Job data extracted successfully! Ready to generate summary.');
+      this.showInfo(this.translations[this.currentLanguage].job_extracted);
     } else {
-      this.showError('⚠️ Some job data could not be extracted. The summary may be incomplete. Try refreshing the page or scrolling down to load all content.');
+      const errorMsg = this.currentLanguage === 'it' 
+        ? '⚠️ Alcuni dati del lavoro non sono stati estratti. Il riassunto potrebbe essere incompleto. Prova a ricaricare la pagina o scorrere verso il basso per caricare tutto il contenuto.'
+        : '⚠️ Some job data could not be extracted. The summary may be incomplete. Try refreshing the page or scrolling down to load all content.';
+      this.showError(errorMsg);
     }
   }
 
   async generateSummary() {
     if (!this.jobData) {
-      this.showError('No job data available. Please refresh the LinkedIn job page and try again.');
+      const errorMsg = this.currentLanguage === 'it' 
+        ? 'Nessun dato del lavoro disponibile. Ricarica la pagina LinkedIn del lavoro e riprova.'
+        : 'No job data available. Please refresh the LinkedIn job page and try again.';
+      this.showError(errorMsg);
       return;
     }
 
@@ -183,7 +292,10 @@ class PopupController {
       this.showResult(summary);
       
     } catch (error) {
-      this.showError('Failed to generate summary. Please try again.');
+      const errorMsg = this.currentLanguage === 'it' 
+        ? 'Impossibile generare il riassunto. Riprova.'
+        : 'Failed to generate summary. Please try again.';
+      this.showError(errorMsg);
       console.error('Summary generation error:', error);
     } finally {
       this.showLoading(false);
@@ -195,6 +307,21 @@ class PopupController {
     
     if (selectedSections.length === 0) {
       return this.getDefaultPrompt();
+    }
+    
+    if (this.currentLanguage === 'it') {
+      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con queste sezioni specifiche:
+
+${selectedSections.map(section => `• ${section}`).join('\n')}
+
+Linee guida per l'output:
+- Usa bullet point chiari per ogni sezione
+- Se le informazioni non sono disponibili, scrivi "Non specificato" o "Non menzionato"
+- Mantieni ogni punto conciso ma informativo
+- Usa una formattazione professionale e leggibile
+- Per lo stipendio, includi eventuali fasce menzionate, benefit o dettagli sui compensi
+- Per la location, specifica le opzioni remote/hybrid/in sede se menzionate
+- Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science"`;
     }
     
     return `Please analyze the following job posting and create a well-formatted summary with these specific sections:
@@ -216,7 +343,14 @@ Guidelines for the output:
     
     checkboxes.forEach((checkbox, index) => {
       if (checkbox.checked) {
-        const sectionMap = {
+        const sectionMap = this.currentLanguage === 'it' ? {
+          0: 'Titolo Lavoro e Azienda',
+          1: 'Stipendio e Compensi',
+          2: 'Luogo di Lavoro e Remote Working',
+          3: 'Benefit e Vantaggi',
+          4: 'Competenze ed Esperienza Richieste',
+          5: 'Team e Cultura Aziendale'
+        } : {
           0: 'Job Title & Company',
           1: 'Salary & Compensation',
           2: 'Work Location & Remote Options', 
@@ -232,6 +366,19 @@ Guidelines for the output:
   }
 
   getDefaultPrompt() {
+    if (this.currentLanguage === 'it') {
+      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con queste sezioni chiave:
+
+• Titolo Lavoro e Azienda
+• Stipendio e Compensi
+• Luogo di Lavoro e Remote Working
+• Benefit e Vantaggi
+• Competenze ed Esperienza Richieste
+
+Usa bullet point chiari e formattazione professionale. Se qualche informazione non è disponibile, indica "Non specificato".
+Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science".`;
+    }
+    
     return `Please analyze the following job posting and create a well-formatted summary with these key sections:
 
 • Job Title & Company
@@ -244,6 +391,13 @@ Use clear bullet points and professional formatting. If any information is not a
   }
 
   getCustomPrompt(userPrompt) {
+    if (this.currentLanguage === 'it') {
+      return `Analizza la seguente offerta di lavoro e crea un riassunto basato su questa richiesta: "${userPrompt}"
+
+Fornisci una risposta chiara e strutturata che affronti i requisiti specifici dell'utente.
+Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science".`;
+    }
+    
     return `Please analyze the following job posting and create a summary based on this request: "${userPrompt}"
 
 Provide a clear, structured response that addresses the user's specific requirements.`;
