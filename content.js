@@ -251,9 +251,9 @@ let jobExtractor = null;
 
 try {
   jobExtractor = new LinkedInJobExtractor();
-  console.log('LinkedIn Job Analyzer: Content script loaded');
+  console.log('[LinkedIn Job Analyzer]: Content script loaded');
 } catch (error) {
-  console.error('LinkedIn Job Analyzer: Error initializing extractor', error);
+  console.error('[LinkedIn Job Analyzer]: Error initializing extractor', error);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -264,11 +264,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       
       const jobData = jobExtractor.extractJobData();
-      console.log('LinkedIn Job Analyzer: Extracted job data', jobData);
+      console.log('[LinkedIn Job Analyzer]: Extracted job data', jobData);
       sendResponse({ jobData: jobData, success: true });
     }
   } catch (error) {
-    console.error('LinkedIn Job Analyzer: Error processing message', error);
+    console.error('[LinkedIn Job Analyzer]: Error processing message', error);
     sendResponse({ jobData: null, success: false, error: error.message });
   }
   return true;

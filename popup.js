@@ -310,13 +310,15 @@ class PopupController {
     }
     
     if (this.currentLanguage === 'it') {
-      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con queste sezioni specifiche:
+      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con ESCLUSIVAMENTE queste sezioni specifiche:
 
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
+IMPORTANTE: Includi SOLO le sezioni sopra elencate. Non aggiungere altre sezioni come "Descrizione", "Requisiti" o qualsiasi altra informazione non specificatamente richiesta.
+
 Linee guida per l'output:
-- Usa bullet point chiari per ogni sezione
-- Se le informazioni non sono disponibili, scrivi "Non specificato" o "Non menzionato"
+- Usa bullet point chiari per ogni sezione richiesta
+- Se le informazioni per una sezione non sono disponibili, scrivi "Non specificato" o "Non menzionato"
 - Mantieni ogni punto conciso ma informativo
 - Usa una formattazione professionale e leggibile
 - Per lo stipendio, includi eventuali fasce menzionate, benefit o dettagli sui compensi
@@ -324,13 +326,15 @@ Linee guida per l'output:
 - Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science"`;
     }
     
-    return `Please analyze the following job posting and create a well-formatted summary with these specific sections:
+    return `Please analyze the following job posting and create a well-formatted summary with ONLY these specific sections:
 
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
+IMPORTANT: Include ONLY the sections listed above. Do not add any other sections like "Description", "Requirements" or any other information not specifically requested.
+
 Guidelines for the output:
-- Use clear bullet points for each section
-- If information is not available, write "Not specified" or "Not mentioned"
+- Use clear bullet points for each requested section
+- If information for a section is not available, write "Not specified" or "Not mentioned"
 - Keep each point concise but informative
 - Use professional, readable formatting
 - For salary, include any mentioned ranges, benefits, or compensation details
