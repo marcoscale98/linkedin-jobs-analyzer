@@ -2,13 +2,21 @@ class AIServiceManager {
   constructor() {
     this.apiKey = null;
     this.serviceProvider = 'openai';
-    this.initializeSettings();
+    this.initialized = false;
+    this.initializationPromise = this.initializeSettings();
   }
 
   async initializeSettings() {
     const result = await chrome.storage.sync.get(['aiApiKey', 'aiProvider']);
     this.apiKey = result.aiApiKey;
     this.serviceProvider = result.aiProvider || 'openai';
+    this.initialized = true;
+  }
+
+  async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initializationPromise;
+    }
   }
 
   async setApiKey(apiKey, provider = 'openai') {
@@ -22,6 +30,10 @@ class AIServiceManager {
 
   async generateSummary(prompt) {
     console.log('[LinkedIn Job Analyzer] Starting summary generation...');
+    
+    // Ensure initialization is complete before proceeding
+    await this.ensureInitialized();
+    
     console.log('[LinkedIn Job Analyzer] API Key present:', !!this.apiKey);
     console.log('[LinkedIn Job Analyzer] Service provider:', this.serviceProvider);
     
