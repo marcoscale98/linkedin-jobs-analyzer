@@ -89,16 +89,21 @@
     
     .result {
       margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      background-color: #f8f9fa;
+      padding: 16px;
+      border: 1px solid #e3f2fd;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f8fbff 0%, #f0f8ff 100%);
       display: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     .result h4 {
-      margin: 0 0 10px 0;
-      color: #333;
+      margin: 0 0 12px 0;
+      color: #0077b5;
+      font-size: 16px;
+      font-weight: 600;
+      border-bottom: 2px solid #0077b5;
+      padding-bottom: 6px;
     }
     
     .error {
@@ -126,6 +131,36 @@
       color: #2e7d32;
       border: 1px solid #c8e6c9;
     }
+    
+    .checkbox-grid {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      margin-right: 8px;
+      transform: scale(1.1);
+      cursor: pointer;
+    }
+    
+    .checkbox-item:hover {
+      color: #333;
+    }
+    
+    #predefined-option.selected {
+      border-color: #0077b5;
+      background-color: #f0f8ff;
+    }
   </style>
 </head>
 <body>
@@ -138,7 +173,27 @@
   <div id="main-content">
     <div class="option-card" id="predefined-option">
       <h3>📋 Predefined Format</h3>
-      <p>Get a standardized summary with job title, company, salary, location, and benefits</p>
+      <p>Customize which information to include:</p>
+      <div class="checkbox-grid">
+        <label class="checkbox-item">
+          <input type="checkbox" checked> Job Title & Company
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" checked> Salary & Compensation
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" checked> Work Location & Remote Options
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" checked> Benefits & Perks
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" checked> Required Skills & Experience
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox"> Team & Company Culture
+        </label>
+      </div>
     </div>
     
     <div class="option-card" id="custom-option">

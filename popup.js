@@ -191,15 +191,56 @@ class PopupController {
   }
 
   getPredefinedPrompt() {
-    return `Please analyze the following job posting and create a structured summary with these sections:
+    const selectedSections = this.getSelectedSections();
+    
+    if (selectedSections.length === 0) {
+      return this.getDefaultPrompt();
+    }
+    
+    return `Please analyze the following job posting and create a well-formatted summary with these specific sections:
 
-• Job Title
-• Company
-• Salary Range
-• Work Location
-• Benefits
+${selectedSections.map(section => `• ${section}`).join('\n')}
 
-Format each section as a bullet point with clear, concise information. If any information is not available, indicate "Not specified".`;
+Guidelines for the output:
+- Use clear bullet points for each section
+- If information is not available, write "Not specified" or "Not mentioned"
+- Keep each point concise but informative
+- Use professional, readable formatting
+- For salary, include any mentioned ranges, benefits, or compensation details
+- For location, specify remote/hybrid/on-site options if mentioned`;
+  }
+
+  getSelectedSections() {
+    const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+    const sections = [];
+    
+    checkboxes.forEach((checkbox, index) => {
+      if (checkbox.checked) {
+        const sectionMap = {
+          0: 'Job Title & Company',
+          1: 'Salary & Compensation',
+          2: 'Work Location & Remote Options', 
+          3: 'Benefits & Perks',
+          4: 'Required Skills & Experience',
+          5: 'Team & Company Culture'
+        };
+        sections.push(sectionMap[index]);
+      }
+    });
+    
+    return sections;
+  }
+
+  getDefaultPrompt() {
+    return `Please analyze the following job posting and create a well-formatted summary with these key sections:
+
+• Job Title & Company
+• Salary & Compensation
+• Work Location & Remote Options
+• Benefits & Perks
+• Required Skills & Experience
+
+Use clear bullet points and professional formatting. If any information is not available, indicate "Not specified".`;
   }
 
   getCustomPrompt(userPrompt) {
@@ -259,10 +300,35 @@ ${jobText}`;
 
   formatSummary(summary) {
     return summary.split('\n').map(line => {
-      if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-        return `<div style="margin: 5px 0;">${line.trim()}</div>`;
+      const trimmedLine = line.trim();
+      
+      if (!trimmedLine) {
+        return '<div style="margin: 8px 0;"></div>';
       }
-      return `<div style="margin: 8px 0; font-weight: ${line.trim().endsWith(':') ? 'bold' : 'normal'};">${line.trim()}</div>`;
+      
+      // Section headers (lines ending with colon)
+      if (trimmedLine.endsWith(':')) {
+        return `<div style="margin: 12px 0 6px 0; font-weight: bold; color: #0077b5; border-bottom: 1px solid #e3f2fd; padding-bottom: 4px;">${trimmedLine}</div>`;
+      }
+      
+      // Bullet points
+      if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-')) {
+        const content = trimmedLine.substring(1).trim();
+        const [label, ...valueParts] = content.split(':');
+        const value = valueParts.join(':').trim();
+        
+        if (value) {
+          return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
+                    <span style="font-weight: 600; color: #333;">${label.trim()}:</span>
+                    <span style="margin-left: 8px; color: #555;">${value}</span>
+                  </div>`;
+        } else {
+          return `<div style="margin: 6px 0; padding: 6px; color: #666;">${content}</div>`;
+        }
+      }
+      
+      // Regular text
+      return `<div style="margin: 6px 0; color: #555; line-height: 1.4;">${trimmedLine}</div>`;
     }).join('');
   }
 
