@@ -20,6 +20,7 @@ zip -r linkedin-job-analyzer.zip . -x "*.git*" "CLAUDE.md" "user-story-job-summa
 ```
 
 ## File Structure
+
 - `manifest.json` - Extension configuration and permissions
 - `popup.html/js` - Extension popup interface and logic
 - `content.js` - LinkedIn page content extraction script
@@ -28,37 +29,46 @@ zip -r linkedin-job-analyzer.zip . -x "*.git*" "CLAUDE.md" "user-story-job-summa
 - `icons/` - Extension icons (16x16, 48x48, 128x128 needed)
 
 ## Key Features Implemented
+
 ✅ Detects LinkedIn job posting pages automatically
 ✅ Extracts job data using multiple selector strategies for robustness
-✅ Provides predefined summary format (title, company, salary, location, benefits)
+✅ Provides predefined summary format with customizable sections (title, company, salary, location, benefits, skills, culture)
 ✅ Supports custom format with natural language prompts
-✅ Integrates with OpenAI GPT and Anthropic Claude APIs
-✅ Secure local storage for API keys
+✅ Integrates with latest AI models: OpenAI GPT-4.1 mini and Anthropic Claude Sonnet 4
+✅ Bilingual support (English/Italian) with language preference persistence
+✅ Secure local storage for API keys and settings
 ✅ Fallback mock responses when API is unavailable
+✅ Intelligent prompt engineering that only includes selected sections
+✅ Technical terms preservation in Italian responses
 
 ## Setup Instructions
+
 1. Configure AI API key in extension options (right-click extension → Options)
-2. Choose between OpenAI or Anthropic as AI provider
-3. API keys are stored locally and encrypted by Chrome
+2. Choose between OpenAI (GPT-4.1 mini) or Anthropic (Claude Sonnet 4) as AI provider
+3. Select preferred language (English/Italian) in settings
+4. API keys and preferences are stored locally and encrypted by Chrome
 
 ## Testing Checklist
+
 - [ ] Extension loads without errors
 - [ ] Popup appears on LinkedIn job pages
 - [ ] Content extraction works on various job posting layouts
-- [ ] Predefined format generates proper bullet points
+- [ ] Predefined format generates only selected sections (no extra fields)
 - [ ] Custom format respects user instructions
 - [ ] API key validation works correctly
-- [ ] Error handling displays helpful messages
+- [ ] Language switching works immediately (EN/IT)
+- [ ] Italian responses preserve technical English terms
+- [ ] Settings persistence across browser sessions
+- [ ] Error handling displays helpful messages in correct language
 
 ## Known Limitations
+
 - Requires manual API key setup (no built-in AI service)
 - LinkedIn layout changes may require selector updates
-- Rate limits depend on chosen AI provider
+- Rate limits depend on chosen AI provider (GPT-4.1 mini or Claude Sonnet 4)
 - Mock responses used when API unavailable
+- First-time usage requires proper API key initialization
 
-## Future Enhancements
-- Add icon files for professional appearance
-- Implement caching to reduce API calls
-- Add export options (copy to clipboard, save as file)
-- Support additional job sites beyond LinkedIn
-- Add job comparison features
+## Claude code behavior
+
+- Use frequently the Web tools and MCP tools

@@ -74,7 +74,7 @@ class AIServiceManager {
     console.log('[LinkedIn Job Analyzer] Making OpenAI API call...');
     
     const requestBody = {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4.1-mini',
       messages: [
         {
           role: 'system',
@@ -85,7 +85,7 @@ class AIServiceManager {
           content: prompt
         }
       ],
-      max_tokens: 500,
+      max_tokens: 1000,
       temperature: 0.3
     };
 
@@ -145,8 +145,8 @@ class AIServiceManager {
     console.log('[LinkedIn Job Analyzer] Making Anthropic API call...');
     
     const requestBody = {
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 500,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
       messages: [
         {
           role: 'user',
