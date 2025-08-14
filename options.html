@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>LinkedIn Job Analyzer - Settings</title>
+  <style>
+    body {
+      width: 600px;
+      padding: 30px;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+    
+    .header {
+      border-bottom: 2px solid #0077b5;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      color: #0077b5;
+      margin: 0;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    
+    .section h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-group input[type="password"] {
+      font-family: monospace;
+    }
+    
+    .save-btn {
+      background-color: #0077b5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .save-btn:hover {
+      background-color: #005885;
+    }
+    
+    .status-message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .api-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .api-info a {
+      color: #0077b5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>LinkedIn Job Analyzer Settings</h1>
+    <p>Configure your AI service provider to enable job summary generation.</p>
+  </div>
+  
+  <div class="section">
+    <h2>AI Service Configuration</h2>
+    
+    <div class="form-group">
+      <label for="ai-provider">AI Provider:</label>
+      <select id="ai-provider">
+        <option value="openai">OpenAI (GPT-3.5/GPT-4)</option>
+        <option value="anthropic">Anthropic (Claude)</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="api-key">API Key:</label>
+      <input type="password" id="api-key" placeholder="Enter your AI provider API key">
+      <div class="api-info">
+        <strong>OpenAI:</strong> Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a><br>
+        <strong>Anthropic:</strong> Get your API key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a><br>
+        <em>Your API key is stored locally and never shared.</em>
+      </div>
+    </div>
+    
+    <button class="save-btn" id="save-btn">Save Settings</button>
+    
+    <div class="status-message" id="status-message"></div>
+  </div>
+  
+  <div class="section">
+    <h2>How to Use</h2>
+    <ol>
+      <li>Navigate to any LinkedIn job posting</li>
+      <li>Click the extension icon in your browser toolbar</li>
+      <li>Choose between predefined format or custom format</li>
+      <li>Click "Generate Summary" to get an AI-powered analysis</li>
+    </ol>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.zip
+
+# Temporary files
+*.tmp
+*.temp
