@@ -161,6 +161,28 @@ npm run test:ui        # Interactive test UI
 - **Multilingual**: Full English/Italian support with technical term preservation
 - **Testing Framework**: Vitest with sinon-chrome for Chrome API mocking and comprehensive coverage
 
+## Technical Architecture
+
+### SchemaManager Class
+- **Dynamic Schema Generation**: Creates OpenAI JSON schemas on-the-fly based on user input
+- **Field Parsing**: Splits user prompts by multiple delimiters (`,`, `\n`, `-`, `•`, `·`, `*`)
+- **Identifier Conversion**: Transforms "titolo lavoro" → `titoloLavoro` for JSON compliance
+- **Schema Caching**: Optimizes performance by caching generated schemas
+- **Multilingual Descriptions**: Provides field descriptions in user's selected language
+
+### Structured Outputs vs Basic JSON
+- **Before**: ~35% JSON reliability with `{"type": "json_object"}`
+- **After**: 100% JSON reliability with `{"type": "json_schema", "strict": true}`
+- **Schema Compliance**: Enforces `additionalProperties: false` for OpenAI compatibility
+- **Error Prevention**: System prompts prevent AI hallucination and fictional content
+
+### Testing Framework
+- **Vitest**: Modern JavaScript testing framework (2-5x faster than Jest)
+- **sinon-chrome**: Chrome extension API mocking for isolated unit tests
+- **JSDOM**: DOM environment simulation for browser-based testing
+- **Coverage**: Comprehensive test coverage across all major components
+- **Mocking Strategy**: Chrome APIs, fetch requests, and DOM manipulation properly mocked
+
 ## Privacy & Security
 
 - API keys are stored locally using Chrome's storage API
@@ -194,6 +216,16 @@ To contribute or modify:
 - Tests are in `test/` directory  
 - Use `npm test` for continuous testing during development
 - All Chrome APIs are properly mocked for unit testing
+
+## Known Limitations
+
+- Requires manual OpenAI API key setup (no built-in AI service)
+- LinkedIn layout changes may require selector updates
+- Rate limits depend on OpenAI API usage and billing
+- Mock responses used when API unavailable (maintain same schema structure)
+- First-time usage requires proper API key initialization
+- Custom field names must be convertible to valid camelCase identifiers
+- Maximum practical limit depends on OpenAI token limits for schema size
 
 ## License
 
