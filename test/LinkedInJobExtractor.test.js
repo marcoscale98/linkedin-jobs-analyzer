@@ -514,11 +514,11 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
     });
 
     it('should handle show more buttons', () => {
-      // Create a short description first to trigger show more button logic
-      const descDiv = document.createElement('div');
-      descDiv.className = 'jobs-description-content__text';
-      descDiv.textContent = 'Short description';
-      document.body.appendChild(descDiv);
+      // Remove existing description element so it's not found initially
+      const existingDesc = document.querySelector('.jobs-description-content__text');
+      if (existingDesc) {
+        existingDesc.remove();
+      }
       
       // Add a show more button with proper visibility
       const showMoreBtn = document.createElement('button');
@@ -542,15 +542,20 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
         visibility: 'visible'
       });
       
+      // Create description div that will appear after clicking
+      const descDiv = document.createElement('div');
+      descDiv.className = 'jobs-description-content__text';
+      
       const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
         // Simulate expanding description after click
         descDiv.textContent = 'This is a much longer description that contains enough content to be considered valid by the extraction method. It has many details about the job position and requirements.';
+        document.body.appendChild(descDiv);
       });
       
       // Mock document.querySelector to prioritize our button for the show more selector
       const originalQuerySelector = document.querySelector;
       document.querySelector = vi.fn().mockImplementation((selector) => {
-        if (selector.includes('Show more') || selector.includes('show more')) {
+        if (selector === 'button[aria-label*="Show more"]' || selector === 'button[aria-label*="show more"]') {
           return showMoreBtn;
         }
         return originalQuerySelector.call(document, selector);
@@ -567,11 +572,11 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
     });
 
     it('should handle Italian show more buttons', () => {
-      // Create a short description first to trigger show more button logic
-      const descDiv = document.createElement('div');
-      descDiv.className = 'jobs-description-content__text';
-      descDiv.textContent = 'Breve descrizione';
-      document.body.appendChild(descDiv);
+      // Remove existing description element so it's not found initially
+      const existingDesc = document.querySelector('.jobs-description-content__text');
+      if (existingDesc) {
+        existingDesc.remove();
+      }
       
       const showMoreBtn = document.createElement('button');
       showMoreBtn.setAttribute('aria-label', 'Mostra di più dettagli');
@@ -594,15 +599,20 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
         visibility: 'visible'
       });
       
+      // Create description div that will appear after clicking
+      const descDiv = document.createElement('div');
+      descDiv.className = 'jobs-description-content__text';
+      
       const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
         // Simulate expanding description after click
         descDiv.textContent = 'Questa è una descrizione molto più lunga che contiene abbastanza contenuto per essere considerata valida dal metodo di estrazione. Ha molti dettagli sulla posizione lavorativa e sui requisiti.';
+        document.body.appendChild(descDiv);
       });
       
       // Mock document.querySelector to prioritize our button for the show more selector
       const originalQuerySelector = document.querySelector;
       document.querySelector = vi.fn().mockImplementation((selector) => {
-        if (selector.includes('Mostra di più') || selector.includes('mostra di più')) {
+        if (selector === 'button[aria-label*="Mostra di più"]' || selector === 'button[aria-label*="mostra di più"]') {
           return showMoreBtn;
         }
         return originalQuerySelector.call(document, selector);
