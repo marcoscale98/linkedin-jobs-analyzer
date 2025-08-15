@@ -9,11 +9,7 @@ class OptionsManager {
   }
 
   async loadSettings() {
-    const result = await chrome.storage.sync.get(['aiApiKey', 'aiProvider', 'language']);
-    
-    if (result.aiProvider) {
-      document.getElementById('ai-provider').value = result.aiProvider;
-    }
+    const result = await chrome.storage.sync.get(['aiApiKey', 'language']);
     
     if (result.aiApiKey) {
       document.getElementById('api-key').value = result.aiApiKey;
@@ -27,7 +23,6 @@ class OptionsManager {
   setupEventListeners() {
     const saveBtn = document.getElementById('save-btn');
     const apiKeyInput = document.getElementById('api-key');
-    const providerSelect = document.getElementById('ai-provider');
     const languageSelect = document.getElementById('language-select');
 
     saveBtn.addEventListener('click', () => this.saveSettings());
@@ -38,27 +33,14 @@ class OptionsManager {
       }
     });
 
-    providerSelect.addEventListener('change', () => {
-      this.updateApiKeyPlaceholder();
-    });
-
     languageSelect.addEventListener('change', () => {
       this.saveLanguageSettings();
     });
 
-    this.updateApiKeyPlaceholder();
+    // Set OpenAI placeholder
+    apiKeyInput.placeholder = 'sk-...';
   }
 
-  updateApiKeyPlaceholder() {
-    const provider = document.getElementById('ai-provider').value;
-    const apiKeyInput = document.getElementById('api-key');
-    
-    if (provider === 'openai') {
-      apiKeyInput.placeholder = 'sk-...';
-    } else if (provider === 'anthropic') {
-      apiKeyInput.placeholder = 'sk-ant-...';
-    }
-  }
 
   async saveLanguageSettings() {
     const language = document.getElementById('language-select').value;
@@ -73,7 +55,6 @@ class OptionsManager {
 
   async saveSettings() {
     const apiKey = document.getElementById('api-key').value.trim();
-    const provider = document.getElementById('ai-provider').value;
     const language = document.getElementById('language-select').value;
 
     if (!apiKey) {
@@ -81,22 +62,20 @@ class OptionsManager {
       return;
     }
 
-    if (!this.validateApiKey(apiKey, provider)) {
-      this.showMessage('Invalid API key format', 'error');
+    if (!this.validateApiKey(apiKey)) {
+      this.showMessage('Invalid OpenAI API key format', 'error');
       return;
     }
 
     try {
       await chrome.storage.sync.set({
         aiApiKey: apiKey,
-        aiProvider: provider,
         language: language
       });
 
       const response = await chrome.runtime.sendMessage({
         action: 'setApiKey',
-        apiKey: apiKey,
-        provider: provider
+        apiKey: apiKey
       });
 
       if (response.success) {
@@ -109,13 +88,8 @@ class OptionsManager {
     }
   }
 
-  validateApiKey(apiKey, provider) {
-    if (provider === 'openai') {
-      return apiKey.startsWith('sk-') && apiKey.length > 20;
-    } else if (provider === 'anthropic') {
-      return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
-    }
-    return false;
+  validateApiKey(apiKey) {
+    return apiKey.startsWith('sk-') && apiKey.length > 20;
   }
 
   showMessage(text, type) {

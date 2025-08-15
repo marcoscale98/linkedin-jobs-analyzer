@@ -310,33 +310,27 @@ class PopupController {
     }
     
     if (this.currentLanguage === 'it') {
-      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con ESCLUSIVAMENTE queste sezioni specifiche:
+      return `Analizza la seguente offerta di lavoro e restituisci un oggetto JSON con i campi richiesti.
 
+Campi da includere basati sulle sezioni selezionate:
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
-IMPORTANTE: Includi SOLO le sezioni sopra elencate. Non aggiungere altre sezioni come "Descrizione", "Requisiti" o qualsiasi altra informazione non specificatamente richiesta.
-
-Linee guida per l'output:
-- Usa bullet point chiari per ogni sezione richiesta
-- Se le informazioni per una sezione non sono disponibili, scrivi "Non specificato" o "Non menzionato"
-- Mantieni ogni punto conciso ma informativo
-- Usa una formattazione professionale e leggibile
-- Per lo stipendio, includi eventuali fasce menzionate, benefit o dettagli sui compensi
-- Per la location, specifica le opzioni remote/hybrid/in sede se menzionate
-- Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science"`;
+Regole per la risposta:
+- Usa SOLO JSON valido con la struttura: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Per i campi non richiesti o non disponibili, usa "Non specificato"
+- Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni
+- Per lo stipendio, includi eventuali fasce, benefit o dettagli sui compensi
+- Per la location, specifica opzioni remote/hybrid/in sede se menzionate`;
     }
     
-    return `Please analyze the following job posting and create a well-formatted summary with ONLY these specific sections:
+    return `Please analyze the following job posting and return a JSON object with the requested fields.
 
+Fields to include based on selected sections:
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
-IMPORTANT: Include ONLY the sections listed above. Do not add any other sections like "Description", "Requirements" or any other information not specifically requested.
-
-Guidelines for the output:
-- Use clear bullet points for each requested section
-- If information for a section is not available, write "Not specified" or "Not mentioned"
-- Keep each point concise but informative
-- Use professional, readable formatting
+Response rules:
+- Use ONLY valid JSON with structure: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- For fields not requested or not available, use "Not specified"
 - For salary, include any mentioned ranges, benefits, or compensation details
 - For location, specify remote/hybrid/on-site options if mentioned`;
   }
@@ -371,40 +365,40 @@ Guidelines for the output:
 
   getDefaultPrompt() {
     if (this.currentLanguage === 'it') {
-      return `Analizza la seguente offerta di lavoro e crea un riassunto ben formattato con queste sezioni chiave:
+      return `Analizza la seguente offerta di lavoro e restituisci un oggetto JSON completo.
 
-• Titolo Lavoro e Azienda
-• Stipendio e Compensi
-• Luogo di Lavoro e Remote Working
-• Benefit e Vantaggi
-• Competenze ed Esperienza Richieste
-
-Usa bullet point chiari e formattazione professionale. Se qualche informazione non è disponibile, indica "Non specificato".
-Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science".`;
+Regole per la risposta:
+- Usa SOLO JSON valido con la struttura: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Se qualche informazione non è disponibile, usa "Non specificato"
+- Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni
+- Includi tutte le informazioni disponibili per ogni campo`;
     }
     
-    return `Please analyze the following job posting and create a well-formatted summary with these key sections:
+    return `Please analyze the following job posting and return a complete JSON object.
 
-• Job Title & Company
-• Salary & Compensation
-• Work Location & Remote Options
-• Benefits & Perks
-• Required Skills & Experience
-
-Use clear bullet points and professional formatting. If any information is not available, indicate "Not specified".`;
+Response rules:
+- Use ONLY valid JSON with structure: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- If any information is not available, use "Not specified"
+- Include all available information for each field`;
   }
 
   getCustomPrompt(userPrompt) {
     if (this.currentLanguage === 'it') {
-      return `Analizza la seguente offerta di lavoro e crea un riassunto basato su questa richiesta: "${userPrompt}"
+      return `Analizza la seguente offerta di lavoro e restituisci un oggetto JSON basato su questa richiesta: "${userPrompt}"
 
-Fornisci una risposta chiara e strutturata che affronti i requisiti specifici dell'utente.
-Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni come "Software Engineer", "Remote Working", "Frontend", "Backend", "Full-stack", "DevOps", "Machine Learning", "Data Science".`;
+Regole per la risposta:
+- Usa SOLO JSON valido con la struttura: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Concentrati sui campi più rilevanti per la richiesta dell'utente
+- Per i campi meno rilevanti, usa "Non specificato" se non disponibili
+- Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni`;
     }
     
-    return `Please analyze the following job posting and create a summary based on this request: "${userPrompt}"
+    return `Please analyze the following job posting and return a JSON object based on this request: "${userPrompt}"
 
-Provide a clear, structured response that addresses the user's specific requirements.`;
+Response rules:
+- Use ONLY valid JSON with structure: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Focus on the fields most relevant to the user's request
+- For less relevant fields, use "Not specified" if not available`;
   }
 
   async callAIService(prompt, jobData) {
@@ -432,6 +426,7 @@ ${jobText}`;
       throw new Error(response.error || 'AI service failed');
     }
 
+    // Response is now a JSON object instead of text
     return response.summary;
   }
 
@@ -452,8 +447,74 @@ ${jobText}`;
     const resultDiv = document.getElementById('result');
     const resultContent = document.getElementById('result-content');
     
-    resultContent.innerHTML = this.formatSummary(summary);
+    // Check if summary is a JSON object or text (for backward compatibility)
+    if (typeof summary === 'object' && summary !== null) {
+      resultContent.innerHTML = this.formatStructuredSummary(summary);
+    } else {
+      // Fallback to old text parsing for any legacy responses
+      resultContent.innerHTML = this.formatSummary(summary);
+    }
     resultDiv.style.display = 'block';
+  }
+
+  formatStructuredSummary(data) {
+    const translations = this.currentLanguage === 'it' ? {
+      jobTitle: 'Titolo Lavoro',
+      company: 'Azienda',
+      salary: 'Stipendio',
+      location: 'Luogo di Lavoro',
+      benefits: 'Benefit',
+      requiredSkills: 'Competenze Richieste',
+      teamCulture: 'Team e Cultura'
+    } : {
+      jobTitle: 'Job Title',
+      company: 'Company',
+      salary: 'Salary',
+      location: 'Location',
+      benefits: 'Benefits',
+      requiredSkills: 'Required Skills',
+      teamCulture: 'Team Culture'
+    };
+
+    const selectedSections = this.getSelectedSections();
+    const fieldsToShow = selectedSections.length > 0 ? this.mapSectionsToFields(selectedSections) : Object.keys(translations);
+    
+    return fieldsToShow.map(field => {
+      const value = data[field] || (this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified');
+      const label = translations[field];
+      
+      return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: 600; color: #333;">${label}:</span>
+                <span style="margin-left: 8px; color: #555;">${value}</span>
+              </div>`;
+    }).join('');
+  }
+
+  mapSectionsToFields(selectedSections) {
+    const sectionMap = this.currentLanguage === 'it' ? {
+      'Titolo Lavoro e Azienda': ['jobTitle', 'company'],
+      'Stipendio e Compensi': ['salary'],
+      'Luogo di Lavoro e Remote Working': ['location'],
+      'Benefit e Vantaggi': ['benefits'],
+      'Competenze ed Esperienza Richieste': ['requiredSkills'],
+      'Team e Cultura Aziendale': ['teamCulture']
+    } : {
+      'Job Title & Company': ['jobTitle', 'company'],
+      'Salary & Compensation': ['salary'],
+      'Work Location & Remote Options': ['location'],
+      'Benefits & Perks': ['benefits'],
+      'Required Skills & Experience': ['requiredSkills'],
+      'Team & Company Culture': ['teamCulture']
+    };
+    
+    const fields = [];
+    selectedSections.forEach(section => {
+      if (sectionMap[section]) {
+        fields.push(...sectionMap[section]);
+      }
+    });
+    
+    return fields.length > 0 ? fields : Object.keys(sectionMap).flatMap(key => sectionMap[key]);
   }
 
   formatSummary(summary) {

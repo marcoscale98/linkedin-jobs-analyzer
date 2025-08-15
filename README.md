@@ -6,7 +6,7 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 
 - **Predefined Format**: Get standardized summaries with job title, company, salary, location, and benefits
 - **Custom Format**: Describe what you want to focus on in natural language (e.g., "Focus on technical requirements and team structure")
-- **AI-Powered**: Uses OpenAI GPT or Anthropic Claude for intelligent content extraction and formatting
+- **AI-Powered**: Uses OpenAI GPT-4.1 mini for intelligent content extraction and formatting with structured JSON output
 - **LinkedIn Integration**: Works seamlessly with LinkedIn job posting pages
 
 ## Installation
@@ -20,11 +20,8 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 ## Setup
 
 1. Right-click the extension icon and select "Options"
-2. Choose your AI provider (OpenAI or Anthropic)
-3. Enter your API key:
-   - **OpenAI**: Get from [OpenAI Platform](https://platform.openai.com/api-keys)
-   - **Anthropic**: Get from [Anthropic Console](https://console.anthropic.com/)
-4. Save your settings
+2. Enter your OpenAI API key (get from [OpenAI Platform](https://platform.openai.com/api-keys))
+3. Save your settings
 
 ## Usage
 
@@ -38,27 +35,24 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 ## Example Output
 
 ### Predefined Format
+Structured JSON output automatically formatted for display:
 ```
-• Job Title: Senior Software Engineer
-• Company: Tech Corp
-• Salary Range: $120,000 - $150,000
-• Work Location: Remote / San Francisco, CA
-• Benefits: Health insurance, 401k matching, unlimited PTO
+Job Title: Senior Software Engineer
+Company: Tech Corp
+Salary: $120,000 - $150,000
+Location: Remote / San Francisco, CA
+Benefits: Health insurance, 401k matching, unlimited PTO
+Required Skills: React, Node.js, TypeScript, 5+ years experience
+Team Culture: Collaborative environment, startup culture
 ```
 
 ### Custom Format
-For the prompt "Focus on technical requirements and team structure":
+For the prompt "Focus on technical requirements and team structure", the JSON response is automatically formatted:
 ```
-Technical Requirements:
-- 5+ years experience with React and Node.js
-- Proficiency in TypeScript and GraphQL
-- Experience with AWS cloud services
-
-Team Structure:
-- Join a team of 8 engineers
-- Report to Engineering Manager
-- Collaborate with Product and Design teams
-- Mentoring junior developers expected
+Job Title: Senior Software Engineer
+Company: Tech Corp
+Required Skills: 5+ years experience with React and Node.js, TypeScript, GraphQL, AWS cloud services
+Team Culture: Team of 8 engineers, report to Engineering Manager, collaborate with Product and Design teams, mentoring junior developers expected
 ```
 
 ## File Structure
@@ -79,14 +73,14 @@ linkedin-jobs-analyzer/
 
 - **Manifest Version**: 3
 - **Permissions**: activeTab, scripting, storage
-- **AI Services**: OpenAI GPT-3.5/GPT-4, Anthropic Claude
+- **AI Service**: OpenAI GPT-4.1 mini with structured JSON output
 - **Content Extraction**: Multiple selector strategies for robust data extraction
 - **Storage**: Chrome storage API for secure API key management
 
 ## Privacy & Security
 
 - API keys are stored locally using Chrome's storage API
-- No data is sent to third parties except your chosen AI provider
+- No data is sent to third parties except OpenAI for AI processing
 - Job posting content is only processed temporarily for summary generation
 - All communication uses HTTPS
 

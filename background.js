@@ -1,15 +1,13 @@
 class AIServiceManager {
   constructor() {
     this.apiKey = null;
-    this.serviceProvider = 'openai';
     this.initialized = false;
     this.initializationPromise = this.initializeSettings();
   }
 
   async initializeSettings() {
-    const result = await chrome.storage.sync.get(['aiApiKey', 'aiProvider']);
+    const result = await chrome.storage.sync.get(['aiApiKey']);
     this.apiKey = result.aiApiKey;
-    this.serviceProvider = result.aiProvider || 'openai';
     this.initialized = true;
   }
 
@@ -19,12 +17,10 @@ class AIServiceManager {
     }
   }
 
-  async setApiKey(apiKey, provider = 'openai') {
+  async setApiKey(apiKey) {
     this.apiKey = apiKey;
-    this.serviceProvider = provider;
     await chrome.storage.sync.set({ 
-      aiApiKey: apiKey, 
-      aiProvider: provider 
+      aiApiKey: apiKey
     });
   }
 
@@ -35,7 +31,6 @@ class AIServiceManager {
     await this.ensureInitialized();
     
     console.log('[LinkedIn Job Analyzer] API Key present:', !!this.apiKey);
-    console.log('[LinkedIn Job Analyzer] Service provider:', this.serviceProvider);
     
     if (!this.apiKey) {
       const error = 'AI API key not configured. Please set your API key in the extension options.';
@@ -44,30 +39,15 @@ class AIServiceManager {
     }
 
     // Validate API key format
-    if (this.serviceProvider === 'openai' && !this.apiKey.startsWith('sk-')) {
+    if (!this.apiKey.startsWith('sk-')) {
       const error = 'Invalid OpenAI API key format. Key should start with "sk-"';
-      console.error('[LinkedIn Job Analyzer] ERROR:', error);
-      throw new Error(error);
-    }
-
-    if (this.serviceProvider === 'anthropic' && !this.apiKey.startsWith('sk-ant-')) {
-      const error = 'Invalid Anthropic API key format. Key should start with "sk-ant-"';
       console.error('[LinkedIn Job Analyzer] ERROR:', error);
       throw new Error(error);
     }
 
     console.log('[LinkedIn Job Analyzer] API key validation passed');
 
-    switch (this.serviceProvider) {
-      case 'openai':
-        return await this.callOpenAI(prompt);
-      case 'anthropic':
-        return await this.callAnthropic(prompt);
-      default:
-        const error = 'Unsupported AI provider: ' + this.serviceProvider;
-        console.error('[LinkedIn Job Analyzer] ERROR:', error);
-        throw new Error(error);
-    }
+    return await this.callOpenAI(prompt);
   }
 
   async callOpenAI(prompt) {
@@ -78,7 +58,7 @@ class AIServiceManager {
       messages: [
         {
           role: 'system',
-          content: 'You are a professional job analysis assistant. Provide clear, structured summaries of job postings.'
+          content: 'You are a professional job analysis assistant. You must respond with valid JSON only. Use this exact schema: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}. If information is not available, use "Not specified" for that field.'
         },
         {
           role: 'user',
@@ -86,7 +66,8 @@ class AIServiceManager {
         }
       ],
       max_tokens: 1000,
-      temperature: 0.3
+      temperature: 0.3,
+      response_format: { "type": "json_object" }
     };
 
     console.log('[LinkedIn Job Analyzer] OpenAI Request body:', {
@@ -128,9 +109,19 @@ class AIServiceManager {
         throw new Error('OpenAI API returned no choices');
       }
 
-      const summary = data.choices[0].message.content;
-      console.log('[LinkedIn Job Analyzer] OpenAI summary generated successfully, length:', summary.length);
-      return summary;
+      const jsonResponse = data.choices[0].message.content;
+      console.log('[LinkedIn Job Analyzer] OpenAI JSON response received, length:', jsonResponse.length);
+      
+      // Parse and validate JSON response
+      try {
+        const parsedData = JSON.parse(jsonResponse);
+        console.log('[LinkedIn Job Analyzer] JSON parsed successfully:', Object.keys(parsedData));
+        return parsedData;
+      } catch (parseError) {
+        console.error('[LinkedIn Job Analyzer] Failed to parse JSON response:', parseError);
+        console.error('[LinkedIn Job Analyzer] Raw response:', jsonResponse);
+        throw new Error('OpenAI returned invalid JSON format');
+      }
       
     } catch (networkError) {
       if (networkError.name === 'TypeError' && networkError.message.includes('fetch')) {
@@ -141,86 +132,19 @@ class AIServiceManager {
     }
   }
 
-  async callAnthropic(prompt) {
-    console.log('[LinkedIn Job Analyzer] Making Anthropic API call...');
-    
-    const requestBody = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    };
-
-    console.log('[LinkedIn Job Analyzer] Anthropic Request body:', {
-      model: requestBody.model,
-      messageCount: requestBody.messages.length,
-      promptLength: prompt.length
-    });
-
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log('[LinkedIn Job Analyzer] Anthropic Response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        let errorDetails;
-        try {
-          errorDetails = await response.json();
-        } catch (jsonError) {
-          console.error('[LinkedIn Job Analyzer] Failed to parse error response:', jsonError);
-          errorDetails = { error: { message: `HTTP ${response.status}: ${response.statusText}` } };
-        }
-        
-        console.error('[LinkedIn Job Analyzer] Anthropic API Error Details:', errorDetails);
-        throw new Error(`Anthropic API error (${response.status}): ${errorDetails.error?.message || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
-      console.log('[LinkedIn Job Analyzer] Anthropic Response received, content count:', data.content?.length || 0);
-      
-      if (!data.content || data.content.length === 0) {
-        console.error('[LinkedIn Job Analyzer] No content in Anthropic response:', data);
-        throw new Error('Anthropic API returned no content');
-      }
-
-      const summary = data.content[0].text;
-      console.log('[LinkedIn Job Analyzer] Anthropic summary generated successfully, length:', summary.length);
-      return summary;
-      
-    } catch (networkError) {
-      if (networkError.name === 'TypeError' && networkError.message.includes('fetch')) {
-        console.error('[LinkedIn Job Analyzer] Network error calling Anthropic:', networkError);
-        throw new Error('Network error: Unable to reach Anthropic API. Check your internet connection.');
-      }
-      throw networkError;
-    }
-  }
 
   async callMockAI(prompt) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    return `
-• Job Title: Software Engineer
-• Company: Tech Company Inc.
-• Salary Range: $80,000 - $120,000
-• Work Location: Remote / San Francisco, CA
-• Benefits: Health insurance, 401k matching, flexible PTO
-
-This is a mock AI response for demonstration purposes. 
-Configure your AI API key to get real summaries.
-    `.trim();
+    return {
+      jobTitle: "Software Engineer",
+      company: "Tech Company Inc.",
+      salary: "$80,000 - $120,000",
+      location: "Remote / San Francisco, CA",
+      benefits: "Health insurance, 401k matching, flexible PTO",
+      requiredSkills: "JavaScript, React, Node.js, 3+ years experience",
+      teamCulture: "Collaborative environment, startup culture, work-life balance"
+    };
   }
 }
 
@@ -242,7 +166,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     
     if (request.action === 'setApiKey') {
-      aiService.setApiKey(request.apiKey, request.provider)
+      aiService.setApiKey(request.apiKey)
         .then(() => {
           console.log('[LinkedIn Job Analyzer] API key set successfully');
           sendResponse({ success: true });

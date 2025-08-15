@@ -108,7 +108,7 @@
 <body>
   <div class="header">
     <h1>LinkedIn Job Analyzer Settings</h1>
-    <p>Configure your AI service provider to enable job summary generation.</p>
+    <p>Configure your OpenAI API key to enable job summary generation.</p>
   </div>
   
   <div class="section">
@@ -124,22 +124,13 @@
   </div>
   
   <div class="section">
-    <h2>AI Service Configuration</h2>
-    
-    <div class="form-group">
-      <label for="ai-provider">AI Provider:</label>
-      <select id="ai-provider">
-        <option value="openai">OpenAI (GPT-4.1 mini)</option>
-        <option value="anthropic">Anthropic (Claude Sonnet 4)</option>
-      </select>
-    </div>
+    <h2>OpenAI Configuration</h2>
     
     <div class="form-group">
       <label for="api-key">API Key:</label>
       <input type="password" id="api-key" placeholder="Enter your AI provider API key">
       <div class="api-info">
-        <strong>OpenAI:</strong> Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a><br>
-        <strong>Anthropic:</strong> Get your API key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a><br>
+        Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a><br>
         <em>Your API key is stored locally and never shared.</em>
       </div>
     </div>
