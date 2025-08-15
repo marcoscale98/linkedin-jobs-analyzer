@@ -159,7 +159,7 @@ npm run test:ui        # Interactive test UI
 - **Storage**: Chrome storage API for secure API key management
 - **JSON Reliability**: 100% valid JSON output (vs ~35% with basic JSON mode)
 - **Multilingual**: Full English/Italian support with technical term preservation
-- **Testing Framework**: Vitest with sinon-chrome for Chrome API mocking and comprehensive coverage
+- **Testing Framework**: Vitest with native Chrome API mocking and comprehensive coverage
 
 ## Technical Architecture
 
@@ -178,7 +178,7 @@ npm run test:ui        # Interactive test UI
 
 ### Testing Framework
 - **Vitest**: Modern JavaScript testing framework (2-5x faster than Jest)
-- **sinon-chrome**: Chrome extension API mocking for isolated unit tests
+- **Native Vitest mocks**: Chrome extension API mocking for isolated unit tests
 - **JSDOM**: DOM environment simulation for browser-based testing
 - **Coverage**: Comprehensive test coverage across all major components
 - **Mocking Strategy**: Chrome APIs, fetch requests, and DOM manipulation properly mocked

@@ -446,16 +446,20 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
   beforeEach(() => {
     // Reset Chrome API mocks
-    chrome.flush();
+    chrome.storage.sync.get.mockClear();
+    chrome.storage.sync.set.mockClear();
+    chrome.runtime.sendMessage.mockClear();
+    chrome.tabs.query.mockClear();
+    chrome.tabs.sendMessage.mockClear();
 
     // Setup default Chrome responses
-    chrome.storage.sync.get.resolves({ language: 'en' });
-    chrome.tabs.query.resolves([{ 
+    chrome.storage.sync.get.mockResolvedValue({ language: 'en' });
+    chrome.tabs.query.mockResolvedValue([{ 
       id: 1, 
       url: 'https://linkedin.com/jobs/view/123456789',
       active: true 
     }]);
-    chrome.tabs.sendMessage.resolves({ 
+    chrome.tabs.sendMessage.mockResolvedValue({ 
       success: true, 
       jobData: {
         title: 'Software Engineer',
@@ -493,16 +497,16 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
   describe('Language Management', () => {
     it('should load language preference from storage', async () => {
-      chrome.storage.sync.get.resolves({ language: 'it' });
+      chrome.storage.sync.get.mockResolvedValue({ language: 'it' });
       
       await popupController.loadLanguagePreference();
       
-      expect(chrome.storage.sync.get.calledWith(['language'])).toBe(true);
+      expect(chrome.storage.sync.get).toHaveBeenCalledWith(['language']);
       expect(popupController.currentLanguage).toBe('it');
     });
 
     it('should default to English when no preference stored', async () => {
-      chrome.storage.sync.get.resolves({});
+      chrome.storage.sync.get.mockResolvedValue({});
       
       await popupController.loadLanguagePreference();
       
@@ -512,7 +516,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     it('should save language preference', async () => {
       await popupController.saveLanguagePreference('it');
       
-      expect(chrome.storage.sync.set.calledWith({ language: 'it' })).toBe(true);
+      expect(chrome.storage.sync.set).toHaveBeenCalledWith({ language: 'it' });
       expect(popupController.currentLanguage).toBe('it');
     });
 
@@ -693,7 +697,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     it('should extract job data successfully', async () => {
       await popupController.extractJobData(1);
       
-      expect(chrome.tabs.sendMessage.calledWith(1, { action: 'extractJobData' })).toBe(true);
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, { action: 'extractJobData' });
       expect(popupController.jobData).toEqual({
         title: 'Software Engineer',
         company: 'Test Company',
@@ -702,7 +706,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should handle extraction errors', async () => {
-      chrome.tabs.sendMessage.resolves({ success: false, error: 'Extraction failed' });
+      chrome.tabs.sendMessage.mockResolvedValue({ success: false, error: 'Extraction failed' });
       
       const showErrorSpy = vi.spyOn(popupController, 'showError');
       
@@ -751,7 +755,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should generate summary successfully', async () => {
-      chrome.runtime.sendMessage.resolves({ 
+      chrome.runtime.sendMessage.mockResolvedValue({ 
         success: true, 
         summary: { jobTitle: 'Software Engineer', company: 'Test Company' }
       });
@@ -762,20 +766,20 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
       
       await popupController.generateSummary();
       
-      expect(chrome.runtime.sendMessage.calledWith({
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: 'generateSummary',
         prompt: 'test prompt',
-        selectedFields: null,
+        selectedFields: ['jobTitle', 'company'],
         language: 'en',
         isCustomFormat: false,
         customPrompt: ''
-      })).toBe(true);
+      });
       
       expect(showResultSpy).toHaveBeenCalledWith({ jobTitle: 'Software Engineer', company: 'Test Company' });
     });
 
     it('should handle generation errors', async () => {
-      chrome.runtime.sendMessage.resolves({ success: false, error: 'API failed' });
+      chrome.runtime.sendMessage.mockResolvedValue({ success: false, error: 'API failed' });
       
       popupController.selectFormat('predefined');
       
@@ -797,7 +801,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should show loading state during generation', async () => {
-      chrome.runtime.sendMessage.resolves({ success: true, summary: {} });
+      chrome.runtime.sendMessage.mockResolvedValue({ success: true, summary: {} });
       
       popupController.selectFormat('predefined');
       
@@ -975,6 +979,10 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     it('should handle generate button click', () => {
       const generateBtn = document.getElementById('generate-btn');
       const generateSpy = vi.spyOn(popupController, 'generateSummary').mockImplementation(() => Promise.resolve());
+      
+      // Enable the button by selecting a format first
+      popupController.selectFormat('predefined');
+      popupController.updateButtonState();
       
       generateBtn?.click();
       

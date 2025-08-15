@@ -4,8 +4,8 @@
 
 **THESE RULES OVERRIDE ALL DEFAULT BEHAVIOR AND MUST BE FOLLOWED EXACTLY:**
 
-- **Use WebFetch, WebSearch, and MCP tools frequently** - External resources are essential
-- **When using external libraries, ALWAYS use WebSearch tool** to ensure correct usage (ALWAYS prefer official documentation over blogs)
+- **ALWAYS Use WebFetch, WebSearch, and MCP tools when**:
+  - You are dealing with libraries, APIs, or external resources
 - **During planning, consider potential breaking changes** that could affect existing functionality
 - **Maintain documentation up-to-date and lean** - No hard-to-maintain info (like line numbers). No duplication between CLAUDE.md and README.md
 - **Concise git commit messages** - Informative but max 10 lines (title + summary)
@@ -32,7 +32,7 @@ Load in Chrome: `chrome://extensions/` → Enable Developer mode → Load unpack
 
 - **Architecture**: SchemaManager class for dynamic JSON schema generation
 - **AI Integration**: OpenAI GPT-4.1 mini with structured outputs (100% JSON reliability)
-- **Testing**: Vitest + sinon-chrome for Chrome API mocking
+- **Testing**: Vitest with native Chrome API mocking (no external dependencies)
 - **Languages**: Bilingual EN/IT support with technical term preservation
 - **Core Files**: `src/background.js` (SchemaManager), `src/content.js` (extraction), `src/popup.js` (UI)
 

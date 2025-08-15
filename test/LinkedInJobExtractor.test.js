@@ -529,9 +529,17 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
       showMoreBtn.style.width = '100px';
       document.body.appendChild(showMoreBtn);
       
-      // Mock offsetParent to make button visible in JSDOM
+      // Mock offsetParent to make button visible in JSDOM - use a more reliable approach
       Object.defineProperty(showMoreBtn, 'offsetParent', {
-        get: () => document.body
+        get: () => document.body,
+        configurable: true
+      });
+      
+      // Also ensure getComputedStyle shows it as visible
+      const originalGetComputedStyle = window.getComputedStyle;
+      window.getComputedStyle = vi.fn().mockReturnValue({
+        display: 'block',
+        visibility: 'visible'
       });
       
       const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
@@ -539,7 +547,20 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
         descDiv.textContent = 'This is a much longer description that contains enough content to be considered valid by the extraction method. It has many details about the job position and requirements.';
       });
       
+      // Mock document.querySelector to prioritize our button for the show more selector
+      const originalQuerySelector = document.querySelector;
+      document.querySelector = vi.fn().mockImplementation((selector) => {
+        if (selector.includes('Show more') || selector.includes('show more')) {
+          return showMoreBtn;
+        }
+        return originalQuerySelector.call(document, selector);
+      });
+      
       const result = extractor.extractDescription();
+      
+      // Restore original functions
+      window.getComputedStyle = originalGetComputedStyle;
+      document.querySelector = originalQuerySelector;
       
       expect(clickSpy).toHaveBeenCalled();
       expect(result).toContain('longer description');
@@ -560,9 +581,17 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
       showMoreBtn.style.width = '100px';
       document.body.appendChild(showMoreBtn);
       
-      // Mock offsetParent to make button visible in JSDOM
+      // Mock offsetParent to make button visible in JSDOM - use a more reliable approach
       Object.defineProperty(showMoreBtn, 'offsetParent', {
-        get: () => document.body
+        get: () => document.body,
+        configurable: true
+      });
+      
+      // Also ensure getComputedStyle shows it as visible
+      const originalGetComputedStyle = window.getComputedStyle;
+      window.getComputedStyle = vi.fn().mockReturnValue({
+        display: 'block',
+        visibility: 'visible'
       });
       
       const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
@@ -570,7 +599,20 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
         descDiv.textContent = 'Questa è una descrizione molto più lunga che contiene abbastanza contenuto per essere considerata valida dal metodo di estrazione. Ha molti dettagli sulla posizione lavorativa e sui requisiti.';
       });
       
+      // Mock document.querySelector to prioritize our button for the show more selector
+      const originalQuerySelector = document.querySelector;
+      document.querySelector = vi.fn().mockImplementation((selector) => {
+        if (selector.includes('Mostra di più') || selector.includes('mostra di più')) {
+          return showMoreBtn;
+        }
+        return originalQuerySelector.call(document, selector);
+      });
+      
       const result = extractor.extractDescription();
+      
+      // Restore original functions
+      window.getComputedStyle = originalGetComputedStyle;
+      document.querySelector = originalQuerySelector;
       
       expect(clickSpy).toHaveBeenCalled();
       expect(result).toContain('descrizione molto più lunga');

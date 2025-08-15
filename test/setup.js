@@ -1,6 +1,25 @@
 import { beforeEach, vi } from 'vitest';
-import chrome from 'sinon-chrome';
 import '@testing-library/jest-dom';
+
+// Create Chrome API mocks using Vitest
+const createChromeAPIStub = () => ({
+  storage: {
+    sync: {
+      get: vi.fn(),
+      set: vi.fn()
+    }
+  },
+  runtime: {
+    sendMessage: vi.fn()
+  },
+  tabs: {
+    query: vi.fn(),
+    sendMessage: vi.fn()
+  }
+});
+
+// Create global chrome mock
+const chrome = createChromeAPIStub();
 
 // Mock Chrome APIs globally
 Object.defineProperty(global, 'chrome', {
@@ -14,21 +33,25 @@ global.fetch = vi.fn();
 // Mock console methods to avoid noise in tests
 beforeEach(() => {
   // Reset all chrome API mocks
-  chrome.flush();
+  chrome.storage.sync.get.mockClear();
+  chrome.storage.sync.set.mockClear();
+  chrome.runtime.sendMessage.mockClear();
+  chrome.tabs.query.mockClear();
+  chrome.tabs.sendMessage.mockClear();
   
   // Reset fetch mock
   vi.clearAllMocks();
   
   // Setup default Chrome API responses
-  chrome.storage.sync.get.resolves({});
-  chrome.storage.sync.set.resolves();
-  chrome.runtime.sendMessage.resolves({ success: true });
-  chrome.tabs.query.resolves([{ 
+  chrome.storage.sync.get.mockResolvedValue({});
+  chrome.storage.sync.set.mockResolvedValue();
+  chrome.runtime.sendMessage.mockResolvedValue({ success: true });
+  chrome.tabs.query.mockResolvedValue([{ 
     id: 1, 
     url: 'https://linkedin.com/jobs/view/123456789',
     active: true 
   }]);
-  chrome.tabs.sendMessage.resolves({ success: true });
+  chrome.tabs.sendMessage.mockResolvedValue({ success: true });
   
   // Suppress console.log in tests unless debugging
   if (!process.env.DEBUG_TESTS) {

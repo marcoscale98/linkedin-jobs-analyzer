@@ -187,11 +187,12 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
 
   beforeEach(() => {
     // Reset Chrome storage mock
-    chrome.flush();
+    chrome.storage.sync.get.mockClear();
+    chrome.storage.sync.set.mockClear();
     
     // Setup default storage responses
-    chrome.storage.sync.get.resolves({ aiApiKey: 'sk-test-key-123' });
-    chrome.storage.sync.set.resolves();
+    chrome.storage.sync.get.mockResolvedValue({ aiApiKey: 'sk-test-key-123' });
+    chrome.storage.sync.set.mockResolvedValue();
 
     // Create fresh instance to avoid state pollution
     aiService = new AIServiceManager();
@@ -219,7 +220,7 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
     });
 
     it('should handle missing API key in storage', async () => {
-      chrome.storage.sync.get.resolves({});
+      chrome.storage.sync.get.mockResolvedValue({});
       
       const newService = new AIServiceManager();
       await newService.ensureInitialized();
