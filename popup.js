@@ -441,12 +441,16 @@ ${jobText}`;
 
     // Get selected fields for dynamic schema generation
     const selectedFields = this.getSelectedFieldNames();
+    const isCustomFormat = this.selectedFormat === 'custom';
+    const customPrompt = isCustomFormat ? document.getElementById('custom-prompt').value.trim() : '';
 
     const response = await chrome.runtime.sendMessage({
       action: 'generateSummary',
       prompt: fullPrompt,
       selectedFields: selectedFields,
-      language: this.currentLanguage
+      language: this.currentLanguage,
+      isCustomFormat: isCustomFormat,
+      customPrompt: customPrompt
     });
 
     if (!response.success) {
@@ -476,12 +480,70 @@ ${jobText}`;
     
     // Check if summary is a JSON object or text (for backward compatibility)
     if (typeof summary === 'object' && summary !== null) {
-      resultContent.innerHTML = this.formatStructuredSummary(summary);
+      if (this.selectedFormat === 'custom') {
+        resultContent.innerHTML = this.formatCustomSummary(summary);
+      } else {
+        resultContent.innerHTML = this.formatStructuredSummary(summary);
+      }
     } else {
       // Fallback to old text parsing for any legacy responses
       resultContent.innerHTML = this.formatSummary(summary);
     }
     resultDiv.style.display = 'block';
+  }
+
+  formatCustomSummary(data) {
+    // For custom format, the field keys are already generated from user's request
+    const notSpecifiedValue = this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified';
+    const customPrompt = document.getElementById('custom-prompt').value.trim();
+    
+    // Extract original field labels from user's prompt for display
+    const requestedFields = customPrompt
+      .split(/[,\n\-•·*]/)
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    
+    // Create a mapping from camelCase field keys back to original field names
+    const fieldKeyToDisplay = {};
+    requestedFields.forEach((originalField, index) => {
+      const fieldKey = this.createFieldKey(originalField);
+      fieldKeyToDisplay[fieldKey] = originalField;
+    });
+    
+    return Object.entries(data).map(([field, value]) => {
+      const displayValue = value || notSpecifiedValue;
+      const displayField = fieldKeyToDisplay[field] || this.humanizeFieldKey(field);
+      
+      // Skip fields with "Non specificato" if they weren't explicitly requested
+      if (value === notSpecifiedValue && !requestedFields.length) {
+        return '';
+      }
+      
+      return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: 600; color: #333;">${displayField}:</span>
+                <span style="margin-left: 8px; color: #555;">${displayValue}</span>
+              </div>`;
+    }).filter(html => html.length > 0).join('');
+  }
+  
+  createFieldKey(fieldName) {
+    // Mirror the logic from background.js
+    return fieldName
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .split(' ')
+      .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
+      .join('')
+      .replace(/[^a-zA-Z0-9]/g, '') || 'campo';
+  }
+  
+  humanizeFieldKey(fieldKey) {
+    // Convert camelCase back to readable text
+    return fieldKey
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
   }
 
   formatStructuredSummary(data) {

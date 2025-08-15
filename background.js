@@ -55,8 +55,13 @@ class SchemaManager {
     this.schemaCache = new Map();
   }
 
-  generateJobSchema(selectedFields = null, language = 'en') {
-    // Create cache key
+  generateJobSchema(selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
+    // For custom format, use flexible schema that allows any fields
+    if (isCustomFormat) {
+      return this.generateCustomSchema(language, customPrompt);
+    }
+    
+    // Create cache key for predefined format
     const cacheKey = `${selectedFields ? selectedFields.sort().join(',') : 'all'}_${language}`;
     
     // Return cached schema if available
@@ -85,6 +90,73 @@ class SchemaManager {
     // Cache the generated schema
     this.schemaCache.set(cacheKey, schema);
     return schema;
+  }
+
+  generateCustomSchema(language = 'en', customPrompt = '') {
+    const notSpecifiedValue = this.getDefaultNotSpecifiedValue(language);
+    
+    // Parse the custom prompt to extract requested fields
+    const requestedFields = this.parseCustomPrompt(customPrompt, language);
+    
+    // Generate schema with dynamic field names based on user request
+    const properties = {};
+    const required = [];
+    
+    requestedFields.forEach((fieldInfo, index) => {
+      const fieldKey = this.createFieldKey(fieldInfo.name);
+      properties[fieldKey] = {
+        type: "string",
+        description: language === 'it'
+          ? `${fieldInfo.name} - estratto dall'offerta di lavoro, o "${notSpecifiedValue}" se non disponibile`
+          : `${fieldInfo.name} - extracted from job posting, or "${notSpecifiedValue}" if not available`
+      };
+      required.push(fieldKey);
+    });
+    
+    // If no fields parsed, create a single general field
+    if (Object.keys(properties).length === 0) {
+      properties.informazioniRichieste = {
+        type: "string",
+        description: language === 'it'
+          ? `Informazioni richieste dall'utente, o "${notSpecifiedValue}" se non disponibili`
+          : `User-requested information, or "${notSpecifiedValue}" if not available`
+      };
+      required.push('informazioniRichieste');
+    }
+    
+    return {
+      type: "object",
+      properties: properties,
+      required: required,
+      additionalProperties: false
+    };
+  }
+  
+  parseCustomPrompt(prompt, language = 'en') {
+    if (!prompt.trim()) return [];
+    
+    // Split by common delimiters and clean up
+    const rawFields = prompt
+      .split(/[,\n\-•·*]/)
+      .map(field => field.trim())
+      .filter(field => field.length > 0);
+    
+    return rawFields.map(field => ({
+      name: field,
+      originalText: field
+    }));
+  }
+  
+  createFieldKey(fieldName) {
+    // Convert field name to a valid camelCase identifier
+    return fieldName
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special chars
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .split(' ')
+      .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
+      .join('')
+      .replace(/[^a-zA-Z0-9]/g, '') || 'campo'; // Fallback
   }
 
   getDefaultNotSpecifiedValue(language = 'en') {
@@ -119,7 +191,7 @@ class AIServiceManager {
     });
   }
 
-  async generateSummary(prompt, selectedFields = null, language = 'en') {
+  async generateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
     console.log('[LinkedIn Job Analyzer] Starting summary generation...');
     
     // Ensure initialization is complete before proceeding
@@ -142,19 +214,23 @@ class AIServiceManager {
 
     console.log('[LinkedIn Job Analyzer] API key validation passed');
 
-    return await this.callOpenAI(prompt, selectedFields, language);
+    return await this.callOpenAI(prompt, selectedFields, language, isCustomFormat, customPrompt);
   }
 
-  async callOpenAI(prompt, selectedFields = null, language = 'en') {
+  async callOpenAI(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
     console.log('[LinkedIn Job Analyzer] Making OpenAI API call with structured outputs...');
     
-    // Generate dynamic schema based on selected fields
-    const schema = this.schemaManager.generateJobSchema(selectedFields, language);
+    // Generate dynamic schema based on selected fields and format type
+    const schema = this.schemaManager.generateJobSchema(selectedFields, language, isCustomFormat, customPrompt);
     const notSpecifiedValue = this.schemaManager.getDefaultNotSpecifiedValue(language);
     
-    const systemMessage = language === 'it' 
-      ? `Sei un assistente professionale per l'analisi di offerte di lavoro. Devi rispondere con JSON strutturato che segue esattamente lo schema fornito. Se le informazioni non sono disponibili, usa "${notSpecifiedValue}" per quel campo. Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni.`
-      : `You are a professional job analysis assistant. You must respond with structured JSON that follows the provided schema exactly. If information is not available, use "${notSpecifiedValue}" for that field.`;
+    const systemMessage = isCustomFormat 
+      ? (language === 'it' 
+          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare o immaginare informazioni. L'utente ha richiesto informazioni specifiche che sono state mappate nei campi dello schema JSON. Usa SOLO i dati reali forniti. Se le informazioni non sono disponibili nei dati forniti, usa SEMPRE "${notSpecifiedValue}". NON creare contenuti falsi o di fantasia. Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni.`
+          : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent or imagine information. The user has requested specific information that has been mapped to the JSON schema fields. Use ONLY the real data provided. If information is not available in the provided data, ALWAYS use "${notSpecifiedValue}". DO NOT create false or fictional content.`)
+      : (language === 'it' 
+          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare informazioni. Devi rispondere con JSON strutturato che segue esattamente lo schema fornito. Se le informazioni non sono disponibili nei dati forniti, usa "${notSpecifiedValue}" per quel campo. Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni.`
+          : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent information. You must respond with structured JSON that follows the provided schema exactly. If information is not available in the provided data, use "${notSpecifiedValue}" for that field.`);
     
     const requestBody = {
       model: 'gpt-4.1-mini',
@@ -237,7 +313,7 @@ class AIServiceManager {
   }
 
 
-  async callMockAI(prompt, selectedFields = null, language = 'en') {
+  async callMockAI(prompt, selectedFields = null, language = 'en', isCustomFormat = false) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const notSpecifiedValue = this.schemaManager.getDefaultNotSpecifiedValue(language);
@@ -270,7 +346,7 @@ const aiService = new AIServiceManager();
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.action === 'generateSummary') {
-      handleGenerateSummary(request.prompt, request.selectedFields, request.language)
+      handleGenerateSummary(request.prompt, request.selectedFields, request.language, request.isCustomFormat, request.customPrompt)
         .then(summary => {
           console.log('[LinkedIn Job Analyzer] Summary generated successfully');
           sendResponse({ success: true, summary });
@@ -300,10 +376,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-async function handleGenerateSummary(prompt, selectedFields = null, language = 'en') {
+async function handleGenerateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
   try {
     console.log('[LinkedIn Job Analyzer] Attempting to generate summary...');
-    const summary = await aiService.generateSummary(prompt, selectedFields, language);
+    const summary = await aiService.generateSummary(prompt, selectedFields, language, isCustomFormat, customPrompt);
     console.log('[LinkedIn Job Analyzer] ✅ Real AI summary generated successfully');
     return summary;
   } catch (error) {
@@ -311,7 +387,7 @@ async function handleGenerateSummary(prompt, selectedFields = null, language = '
     console.error('[LinkedIn Job Analyzer] Error details:', error.message);
     console.error('[LinkedIn Job Analyzer] Full error object:', error);
     
-    const mockSummary = await aiService.callMockAI(prompt, selectedFields, language);
+    const mockSummary = await aiService.callMockAI(prompt, selectedFields, language, isCustomFormat, customPrompt);
     console.log('[LinkedIn Job Analyzer] 🎭 Mock response returned');
     return mockSummary;
   }
