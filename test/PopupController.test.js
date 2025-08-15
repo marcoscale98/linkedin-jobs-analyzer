@@ -216,10 +216,10 @@ class PopupController {
   }
 
   isLinkedInJobPage(url) {
-    return url.includes('linkedin.com/jobs/view/') || 
-           url.includes('it.linkedin.com/jobs/view/') ||
-           url.match(/linkedin\.com\/jobs\/view\/\d+/) ||
-           url.match(/it\.linkedin\.com\/jobs\/view\/\d+/);
+    return !!(url.includes('linkedin.com/jobs/view/') || 
+              url.includes('it.linkedin.com/jobs/view/') ||
+              url.match(/linkedin\.com\/jobs\/view\/\d+/) ||
+              url.match(/it\.linkedin\.com\/jobs\/view\/\d+/));
   }
 
   showPageGuidance(currentUrl) {
@@ -446,19 +446,16 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
   beforeEach(() => {
     // Reset Chrome API mocks
-    chrome.storage.sync.get.reset();
-    chrome.tabs.query.reset();
-    chrome.tabs.sendMessage.reset();
-    chrome.runtime.sendMessage.reset();
+    chrome.flush();
 
     // Setup default Chrome responses
-    chrome.storage.sync.get.callsArgWith(1, { language: 'en' });
-    chrome.tabs.query.callsArgWith(1, [{ 
+    chrome.storage.sync.get.resolves({ language: 'en' });
+    chrome.tabs.query.resolves([{ 
       id: 1, 
       url: 'https://linkedin.com/jobs/view/123456789',
       active: true 
     }]);
-    chrome.tabs.sendMessage.callsArgWith(2, { 
+    chrome.tabs.sendMessage.resolves({ 
       success: true, 
       jobData: {
         title: 'Software Engineer',
@@ -496,16 +493,16 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
   describe('Language Management', () => {
     it('should load language preference from storage', async () => {
-      chrome.storage.sync.get.callsArgWith(1, { language: 'it' });
+      chrome.storage.sync.get.resolves({ language: 'it' });
       
       await popupController.loadLanguagePreference();
       
-      expect(chrome.storage.sync.get).toHaveBeenCalledWith(['language']);
+      expect(chrome.storage.sync.get.calledWith(['language'])).toBe(true);
       expect(popupController.currentLanguage).toBe('it');
     });
 
     it('should default to English when no preference stored', async () => {
-      chrome.storage.sync.get.callsArgWith(1, {});
+      chrome.storage.sync.get.resolves({});
       
       await popupController.loadLanguagePreference();
       
@@ -515,7 +512,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     it('should save language preference', async () => {
       await popupController.saveLanguagePreference('it');
       
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({ language: 'it' });
+      expect(chrome.storage.sync.set.calledWith({ language: 'it' })).toBe(true);
       expect(popupController.currentLanguage).toBe('it');
     });
 
@@ -696,7 +693,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     it('should extract job data successfully', async () => {
       await popupController.extractJobData(1);
       
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, { action: 'extractJobData' });
+      expect(chrome.tabs.sendMessage.calledWith(1, { action: 'extractJobData' })).toBe(true);
       expect(popupController.jobData).toEqual({
         title: 'Software Engineer',
         company: 'Test Company',
@@ -705,7 +702,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should handle extraction errors', async () => {
-      chrome.tabs.sendMessage.callsArgWith(2, { success: false, error: 'Extraction failed' });
+      chrome.tabs.sendMessage.resolves({ success: false, error: 'Extraction failed' });
       
       const showErrorSpy = vi.spyOn(popupController, 'showError');
       
@@ -754,7 +751,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should generate summary successfully', async () => {
-      chrome.runtime.sendMessage.callsArgWith(1, { 
+      chrome.runtime.sendMessage.resolves({ 
         success: true, 
         summary: { jobTitle: 'Software Engineer', company: 'Test Company' }
       });
@@ -765,20 +762,20 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
       
       await popupController.generateSummary();
       
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      expect(chrome.runtime.sendMessage.calledWith({
         action: 'generateSummary',
         prompt: 'test prompt',
         selectedFields: null,
         language: 'en',
         isCustomFormat: false,
         customPrompt: ''
-      });
+      })).toBe(true);
       
       expect(showResultSpy).toHaveBeenCalledWith({ jobTitle: 'Software Engineer', company: 'Test Company' });
     });
 
     it('should handle generation errors', async () => {
-      chrome.runtime.sendMessage.callsArgWith(1, { success: false, error: 'API failed' });
+      chrome.runtime.sendMessage.resolves({ success: false, error: 'API failed' });
       
       popupController.selectFormat('predefined');
       
@@ -800,7 +797,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
     });
 
     it('should show loading state during generation', async () => {
-      chrome.runtime.sendMessage.callsArgWith(1, { success: true, summary: {} });
+      chrome.runtime.sendMessage.resolves({ success: true, summary: {} });
       
       popupController.selectFormat('predefined');
       
@@ -963,8 +960,8 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
     it('should handle language button clicks', async () => {
       const itBtn = document.querySelector('[data-lang="it"]');
-      const saveLanguageSpy = vi.spyOn(popupController, 'saveLanguagePreference');
-      const updateUISpy = vi.spyOn(popupController, 'updateLanguageUI');
+      const saveLanguageSpy = vi.spyOn(popupController, 'saveLanguagePreference').mockImplementation(() => Promise.resolve());
+      const updateUISpy = vi.spyOn(popupController, 'updateLanguageUI').mockImplementation(() => {});
       
       itBtn?.click();
       
@@ -977,7 +974,7 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
 
     it('should handle generate button click', () => {
       const generateBtn = document.getElementById('generate-btn');
-      const generateSpy = vi.spyOn(popupController, 'generateSummary');
+      const generateSpy = vi.spyOn(popupController, 'generateSummary').mockImplementation(() => Promise.resolve());
       
       generateBtn?.click();
       

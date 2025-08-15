@@ -53,10 +53,10 @@ class LinkedInJobExtractor {
 
   detectJobPage() {
     const url = window.location.href;
-    return url.includes('/jobs/view/') || 
-           url.includes('/jobs/collections/') ||
-           url.match(/linkedin\.com\/jobs\/view\/\d+/) ||
-           url.match(/it\.linkedin\.com\/jobs\/view\/\d+/);
+    return !!(url.includes('/jobs/view/') || 
+              url.includes('/jobs/collections/') ||
+              url.match(/linkedin\.com\/jobs\/view\/\d+/) ||
+              url.match(/it\.linkedin\.com\/jobs\/view\/\d+/));
   }
 
   extractJobData() {
@@ -492,7 +492,7 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
     });
 
     it('should return fallback message when no salary found', () => {
-      document.querySelector('.job-details-jobs-unified-top-card__job-insight').textContent = 'No salary info';
+      document.querySelector('.job-details-jobs-unified-top-card__job-insight').textContent = 'Some unrelated text';
       
       const salary = extractor.extractSalary();
       expect(salary).toBe('Salary not specified');
@@ -514,30 +514,66 @@ describe('[LinkedIn Job Analyzer] LinkedInJobExtractor', () => {
     });
 
     it('should handle show more buttons', () => {
-      // Add a show more button
+      // Create a short description first to trigger show more button logic
+      const descDiv = document.createElement('div');
+      descDiv.className = 'jobs-description-content__text';
+      descDiv.textContent = 'Short description';
+      document.body.appendChild(descDiv);
+      
+      // Add a show more button with proper visibility
       const showMoreBtn = document.createElement('button');
-      showMoreBtn.setAttribute('aria-label', 'Show more');
+      showMoreBtn.setAttribute('aria-label', 'Show more details');
       showMoreBtn.style.display = 'block';
+      showMoreBtn.style.visibility = 'visible';
+      showMoreBtn.style.height = '30px';
+      showMoreBtn.style.width = '100px';
       document.body.appendChild(showMoreBtn);
       
-      const clickSpy = vi.spyOn(showMoreBtn, 'click');
+      // Mock offsetParent to make button visible in JSDOM
+      Object.defineProperty(showMoreBtn, 'offsetParent', {
+        get: () => document.body
+      });
       
-      extractor.extractDescription();
+      const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
+        // Simulate expanding description after click
+        descDiv.textContent = 'This is a much longer description that contains enough content to be considered valid by the extraction method. It has many details about the job position and requirements.';
+      });
+      
+      const result = extractor.extractDescription();
       
       expect(clickSpy).toHaveBeenCalled();
+      expect(result).toContain('longer description');
     });
 
     it('should handle Italian show more buttons', () => {
+      // Create a short description first to trigger show more button logic
+      const descDiv = document.createElement('div');
+      descDiv.className = 'jobs-description-content__text';
+      descDiv.textContent = 'Breve descrizione';
+      document.body.appendChild(descDiv);
+      
       const showMoreBtn = document.createElement('button');
-      showMoreBtn.setAttribute('aria-label', 'Mostra di più');
+      showMoreBtn.setAttribute('aria-label', 'Mostra di più dettagli');
       showMoreBtn.style.display = 'block';
+      showMoreBtn.style.visibility = 'visible';
+      showMoreBtn.style.height = '30px';
+      showMoreBtn.style.width = '100px';
       document.body.appendChild(showMoreBtn);
       
-      const clickSpy = vi.spyOn(showMoreBtn, 'click');
+      // Mock offsetParent to make button visible in JSDOM
+      Object.defineProperty(showMoreBtn, 'offsetParent', {
+        get: () => document.body
+      });
       
-      extractor.extractDescription();
+      const clickSpy = vi.spyOn(showMoreBtn, 'click').mockImplementation(() => {
+        // Simulate expanding description after click
+        descDiv.textContent = 'Questa è una descrizione molto più lunga che contiene abbastanza contenuto per essere considerata valida dal metodo di estrazione. Ha molti dettagli sulla posizione lavorativa e sui requisiti.';
+      });
+      
+      const result = extractor.extractDescription();
       
       expect(clickSpy).toHaveBeenCalled();
+      expect(result).toContain('descrizione molto più lunga');
     });
 
     it('should return fallback message for short or missing descriptions', () => {

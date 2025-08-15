@@ -20,15 +20,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   
   // Setup default Chrome API responses
-  chrome.storage.sync.get.callsArgWith(1, {});
-  chrome.storage.sync.set.callsArgWith(1);
-  chrome.runtime.sendMessage.callsArgWith(1, { success: true });
-  chrome.tabs.query.callsArgWith(1, [{ 
+  chrome.storage.sync.get.resolves({});
+  chrome.storage.sync.set.resolves();
+  chrome.runtime.sendMessage.resolves({ success: true });
+  chrome.tabs.query.resolves([{ 
     id: 1, 
     url: 'https://linkedin.com/jobs/view/123456789',
     active: true 
   }]);
-  chrome.tabs.sendMessage.callsArgWith(2, { success: true });
+  chrome.tabs.sendMessage.resolves({ success: true });
   
   // Suppress console.log in tests unless debugging
   if (!process.env.DEBUG_TESTS) {

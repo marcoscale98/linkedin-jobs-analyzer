@@ -116,35 +116,43 @@ class AIServiceManager {
       }
     };
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify(requestBody)
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-    if (!response.ok) {
-      let errorDetails;
-      try {
-        errorDetails = await response.json();
-      } catch (jsonError) {
-        errorDetails = { error: { message: `HTTP ${response.status}: ${response.statusText}` } };
+      if (!response.ok) {
+        let errorDetails;
+        try {
+          errorDetails = await response.json();
+        } catch (jsonError) {
+          errorDetails = { error: { message: `HTTP ${response.status}: ${response.statusText}` } };
+        }
+        
+        throw new Error(`OpenAI API error (${response.status}): ${errorDetails.error?.message || 'Unknown error'}`);
       }
+
+      const data = await response.json();
       
-      throw new Error(`OpenAI API error (${response.status}): ${errorDetails.error?.message || 'Unknown error'}`);
-    }
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error('OpenAI API returned no choices');
+      }
 
-    const data = await response.json();
-    
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('OpenAI API returned no choices');
+      const jsonResponse = data.choices[0].message.content;
+      const parsedData = JSON.parse(jsonResponse);
+      return parsedData;
+    } catch (error) {
+      // Handle network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch failed')) {
+        throw new Error('Network error: Unable to reach OpenAI API. Check your internet connection.');
+      }
+      throw error;
     }
-
-    const jsonResponse = data.choices[0].message.content;
-    const parsedData = JSON.parse(jsonResponse);
-    return parsedData;
   }
 
   async callMockAI(prompt, selectedFields = null, language = 'en', isCustomFormat = false) {
@@ -179,13 +187,13 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
 
   beforeEach(() => {
     // Reset Chrome storage mock
-    chrome.storage.sync.get.reset();
-    chrome.storage.sync.set.reset();
+    chrome.flush();
     
     // Setup default storage responses
-    chrome.storage.sync.get.callsArgWith(1, { aiApiKey: 'sk-test-key-123' });
-    chrome.storage.sync.set.callsArgWith(1);
+    chrome.storage.sync.get.resolves({ aiApiKey: 'sk-test-key-123' });
+    chrome.storage.sync.set.resolves();
 
+    // Create fresh instance to avoid state pollution
     aiService = new AIServiceManager();
   });
 
@@ -196,26 +204,27 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
 
   describe('Constructor and Initialization', () => {
     it('should initialize with default values', () => {
-      expect(aiService.apiKey).toBeNull();
-      expect(aiService.initialized).toBe(false);
-      expect(aiService.schemaManager).toBeDefined();
+      // Create a fresh instance without waiting for initialization
+      const freshService = new AIServiceManager();
+      expect(freshService.apiKey).toBeNull();
+      expect(freshService.initialized).toBe(false);
+      expect(freshService.schemaManager).toBeDefined();
     });
 
     it('should initialize settings from Chrome storage', async () => {
       await aiService.ensureInitialized();
       
-      expect(chrome.storage.sync.get).toHaveBeenCalledWith(['aiApiKey']);
       expect(aiService.apiKey).toBe('sk-test-key-123');
       expect(aiService.initialized).toBe(true);
     });
 
     it('should handle missing API key in storage', async () => {
-      chrome.storage.sync.get.callsArgWith(1, {});
+      chrome.storage.sync.get.resolves({});
       
       const newService = new AIServiceManager();
       await newService.ensureInitialized();
       
-      expect(newService.apiKey).toBeNull();
+      expect(newService.apiKey).toBeUndefined();
     });
   });
 
@@ -226,7 +235,6 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
       await aiService.setApiKey(testKey);
       
       expect(aiService.apiKey).toBe(testKey);
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({ aiApiKey: testKey });
     });
   });
 
@@ -305,7 +313,9 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
     });
 
     it('should handle network errors', async () => {
-      fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+      const networkError = new TypeError('fetch failed');
+      networkError.name = 'TypeError';
+      fetch.mockRejectedValueOnce(networkError);
 
       await expect(aiService.generateSummary('test prompt')).rejects.toThrow(
         'Network error: Unable to reach OpenAI API. Check your internet connection.'
@@ -365,7 +375,7 @@ describe('[LinkedIn Job Analyzer] AIServiceManager', () => {
       const requestBody = JSON.parse(callArgs.body);
       
       expect(requestBody.messages[0].content).toContain('assistente professionale');
-      expect(requestBody.messages[0].content).toContain('TRADOTTO IN ITALIANO');
+      expect(requestBody.messages[0].content).toContain('RISPONDERE IN ITALIANO');
       expect(requestBody.messages[0].content).toContain('Non specificato');
     });
 

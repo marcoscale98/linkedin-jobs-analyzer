@@ -206,16 +206,10 @@ To contribute or modify:
 
 1. Install dependencies: `npm install`
 2. Make changes to the source files in `src/`
-3. Run tests: `npm test` or `npm run test:coverage`
+3. Run tests: `npm run test:run` or `npm run test:coverage`
 4. Reload the extension in `chrome://extensions/`
 5. Test on various LinkedIn job postings
 6. Submit pull requests for improvements
-
-### Development Workflow
-- Source files are in `src/` directory
-- Tests are in `test/` directory  
-- Use `npm test` for continuous testing during development
-- All Chrome APIs are properly mocked for unit testing
 
 ## Known Limitations
 

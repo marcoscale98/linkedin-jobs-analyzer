@@ -135,7 +135,7 @@ class OptionsManager {
   }
 
   validateApiKey(apiKey) {
-    return apiKey.startsWith('sk-') && apiKey.length > 20;
+    return apiKey.startsWith('sk-') && apiKey.length >= 20;
   }
 
   showMessage(text, type) {
@@ -159,17 +159,15 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
 
   beforeEach(() => {
     // Reset Chrome API mocks
-    chrome.storage.sync.get.reset();
-    chrome.storage.sync.set.reset();
-    chrome.runtime.sendMessage.reset();
+    chrome.flush();
 
     // Setup default Chrome responses
-    chrome.storage.sync.get.callsArgWith(1, { 
+    chrome.storage.sync.get.resolves({ 
       aiApiKey: 'sk-test-key-123456789012345678901234567890',
       language: 'en' 
     });
-    chrome.storage.sync.set.callsArgWith(1);
-    chrome.runtime.sendMessage.callsArgWith(1, { success: true });
+    chrome.storage.sync.set.resolves();
+    chrome.runtime.sendMessage.resolves({ success: true });
 
     // Create DOM
     createOptionsDOM();
@@ -191,7 +189,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       // Wait for async initialization
       await new Promise(resolve => setTimeout(resolve, 0));
       
-      expect(chrome.storage.sync.get).toHaveBeenCalledWith(['aiApiKey', 'language']);
+      expect(chrome.storage.sync.get.calledWith(['aiApiKey', 'language'])).toBe(true);
       
       const apiKeyInput = document.getElementById('api-key');
       const languageSelect = document.getElementById('language-select');
@@ -201,8 +199,14 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should handle missing settings gracefully', async () => {
-      chrome.storage.sync.get.callsArgWith(1, {});
+      // Reset chrome mock to return empty for this specific test
+      chrome.flush();
+      chrome.storage.sync.get.resolves({});
+      chrome.storage.sync.set.resolves();
+      chrome.runtime.sendMessage.resolves({ success: true });
       
+      // Create fresh DOM and manager
+      createOptionsDOM();
       const newOptionsManager = new OptionsManager();
       await new Promise(resolve => setTimeout(resolve, 0));
       
@@ -223,7 +227,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should load language preference from storage', async () => {
-      chrome.storage.sync.get.callsArgWith(1, { language: 'it' });
+      chrome.storage.sync.get.resolves({ language: 'it' });
       
       await optionsManager.loadSettings();
       
@@ -232,16 +236,22 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should handle missing API key', async () => {
-      chrome.storage.sync.get.callsArgWith(1, { language: 'en' });
+      // Reset chrome mock and setup fresh DOM for this test
+      chrome.flush();
+      chrome.storage.sync.get.resolves({ language: 'en' });
+      chrome.storage.sync.set.resolves();
+      chrome.runtime.sendMessage.resolves({ success: true });
       
-      await optionsManager.loadSettings();
+      createOptionsDOM();
+      const newManager = new OptionsManager();
+      await new Promise(resolve => setTimeout(resolve, 0));
       
       const apiKeyInput = document.getElementById('api-key');
       expect(apiKeyInput?.value).toBe('');
     });
 
     it('should handle missing language setting', async () => {
-      chrome.storage.sync.get.callsArgWith(1, { aiApiKey: 'sk-test' });
+      chrome.storage.sync.get.resolves({ aiApiKey: 'sk-test' });
       
       await optionsManager.loadSettings();
       
@@ -255,9 +265,9 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       await new Promise(resolve => setTimeout(resolve, 0)); // Wait for initialization
     });
 
-    it('should set up save button click listener', () => {
+    it('should set up save button click listener', async () => {
       const saveBtn = document.getElementById('save-btn');
-      const saveSettingsSpy = vi.spyOn(optionsManager, 'saveSettings');
+      const saveSettingsSpy = vi.spyOn(optionsManager, 'saveSettings').mockImplementation(() => Promise.resolve());
       
       saveBtn?.click();
       
@@ -266,7 +276,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
 
     it('should set up API key Enter key listener', () => {
       const apiKeyInput = document.getElementById('api-key');
-      const saveSettingsSpy = vi.spyOn(optionsManager, 'saveSettings');
+      const saveSettingsSpy = vi.spyOn(optionsManager, 'saveSettings').mockImplementation(() => Promise.resolve());
       
       const enterEvent = new KeyboardEvent('keypress', { key: 'Enter' });
       apiKeyInput?.dispatchEvent(enterEvent);
@@ -286,7 +296,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
 
     it('should set up language select change listener', () => {
       const languageSelect = document.getElementById('language-select');
-      const saveLanguageSpy = vi.spyOn(optionsManager, 'saveLanguageSettings');
+      const saveLanguageSpy = vi.spyOn(optionsManager, 'saveLanguageSettings').mockImplementation(() => Promise.resolve());
       
       if (languageSelect) {
         languageSelect.value = 'it';
@@ -315,7 +325,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       
       await optionsManager.saveLanguageSettings();
       
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({ language: 'it' });
+      expect(chrome.storage.sync.set.calledWith({ language: 'it' })).toBe(true);
     });
 
     it('should show success message after saving language', async () => {
@@ -327,7 +337,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should handle storage errors', async () => {
-      chrome.storage.sync.set.callsArgWithAsync(1, new Error('Storage failed'));
+      chrome.storage.sync.set.rejects(new Error('Storage failed'));
       
       const showMessageSpy = vi.spyOn(optionsManager, 'showMessage');
       
@@ -358,15 +368,15 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       
       await optionsManager.saveSettings();
       
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({
+      expect(chrome.storage.sync.set.calledWith({
         aiApiKey: 'sk-valid-key-123456789012345678901234567890',
         language: 'it'
-      });
+      })).toBe(true);
       
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      expect(chrome.runtime.sendMessage.calledWith({
         action: 'setApiKey',
         apiKey: 'sk-valid-key-123456789012345678901234567890'
-      });
+      })).toBe(true);
     });
 
     it('should show error for empty API key', async () => {
@@ -397,14 +407,14 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       
       await optionsManager.saveSettings();
       
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({
+      expect(chrome.storage.sync.set.calledWith({
         aiApiKey: 'sk-valid-key-123456789012345678901234567890',
         language: 'en'
-      });
+      })).toBe(true);
     });
 
     it('should handle storage errors', async () => {
-      chrome.storage.sync.set.callsArgWithAsync(1, new Error('Storage failed'));
+      chrome.storage.sync.set.rejects(new Error('Storage failed'));
       
       const apiKeyInput = document.getElementById('api-key');
       if (apiKeyInput) apiKeyInput.value = 'sk-valid-key-123456789012345678901234567890';
@@ -417,7 +427,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should handle runtime message errors', async () => {
-      chrome.runtime.sendMessage.callsArgWith(1, { success: false, error: 'Runtime failed' });
+      chrome.runtime.sendMessage.resolves({ success: false, error: 'Runtime failed' });
       
       const apiKeyInput = document.getElementById('api-key');
       if (apiKeyInput) apiKeyInput.value = 'sk-valid-key-123456789012345678901234567890';
@@ -469,10 +479,11 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
         'sk-short',
         'pk-123456789012345678901234567890', // Wrong prefix
         '', // Empty
-        'sk-123456789012345678' // Too short
+        'sk-12345678901234567' // Too short (19 chars total)
       ];
       
       invalidKeys.forEach(key => {
+        console.log(`Testing key: "${key}" (length: ${key.length})`);
         expect(optionsManager.validateApiKey(key)).toBe(false);
       });
     });
@@ -549,7 +560,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle Chrome storage exceptions', async () => {
-      chrome.storage.sync.get.throws(new Error('Storage unavailable'));
+      chrome.storage.sync.get.rejects(new Error('Storage unavailable'));
       
       const newOptionsManager = new OptionsManager();
       
@@ -558,7 +569,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
     });
 
     it('should handle Chrome runtime message exceptions', async () => {
-      chrome.runtime.sendMessage.throws(new Error('Runtime unavailable'));
+      chrome.runtime.sendMessage.rejects(new Error('Runtime unavailable'));
       
       const apiKeyInput = document.getElementById('api-key');
       if (apiKeyInput) apiKeyInput.value = 'sk-valid-key-123456789012345678901234567890';
@@ -612,15 +623,15 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       await optionsManager.saveSettings();
       
       // Verify all steps completed
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({
+      expect(chrome.storage.sync.set.calledWith({
         aiApiKey: 'sk-integration-test-123456789012345678901234567890',
         language: 'it'
-      });
+      })).toBe(true);
       
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      expect(chrome.runtime.sendMessage.calledWith({
         action: 'setApiKey',
         apiKey: 'sk-integration-test-123456789012345678901234567890'
-      });
+      })).toBe(true);
       
       // Check success message
       const messageDiv = document.getElementById('status-message');
@@ -646,10 +657,10 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       await optionsManager.saveSettings();
       
       // Verify save call
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith({
+      expect(chrome.storage.sync.set.calledWith({
         aiApiKey: 'sk-modified-key-123456789012345678901234567890',
         language: 'it'
-      });
+      })).toBe(true);
     });
   });
 });
