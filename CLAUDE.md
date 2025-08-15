@@ -138,3 +138,5 @@ Work Location (remote/hybrid/onsite)
 - When using external libraries, ALWAYS use WebFetch tool to ensure you use them correctly
 - Call the @breaking-change-detector agent before showing the plan to the user or executing it
 - Maintain the documentation up-to-date and lean. Do not put information that are difficult to maintain (like code line numbers). Do not repeat info between @CLAUDE.md and @README.md
+- Concise in git commit messages, but informative enough to understand the change (title and summary of max 10 lines)
+- Use @code-refactoring-expert agent after a code implementation, before finishing your turn
