@@ -4,10 +4,16 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 
 ## Features
 
-- **Predefined Format**: Get standardized summaries with job title, company, salary, location, and benefits
-- **Custom Format**: Describe what you want to focus on in natural language (e.g., "Focus on technical requirements and team structure")
-- **AI-Powered**: Uses OpenAI GPT-4.1 mini for intelligent content extraction and formatting with structured JSON output
+- **Predefined Format**: Get standardized summaries with customizable sections (job title, company, salary, location, benefits, skills, culture)
+- **Flexible Custom Format**: Request any number of fields using natural language with infinite flexibility
+  - Single field: `"salary"`
+  - Multiple fields: `"titolo lavoro, azienda, gruppo aziendale, orario lavorativo"`
+  - Bullet format: `"- team size\n- remote policy\n- required skills"`
+  - Mixed delimiters: Support for commas, newlines, dashes, and bullets (-, •, ·, *)
+- **OpenAI Structured Outputs**: 100% JSON reliability using GPT-4.1 mini with dynamic schema generation
+- **Multilingual Support**: English and Italian interfaces with intelligent technical term preservation
 - **LinkedIn Integration**: Works seamlessly with LinkedIn job posting pages
+- **Smart Field Mapping**: Converts user field names to valid identifiers and back for display
 
 ## Installation
 
@@ -28,31 +34,76 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 1. Navigate to any LinkedIn job posting (`linkedin.com/jobs/view/...`)
 2. Click the extension icon in your browser toolbar
 3. Choose your summary format:
-   - **Predefined Format**: Standard bullet-point summary
-   - **Custom Format**: Describe your preferences in natural language
+   - **Predefined Format**: Select specific sections from checkboxes (title, company, salary, location, benefits, skills, culture)
+   - **Custom Format**: Enter any fields you want in natural language
 4. Click "Generate Summary" to get an AI-powered analysis
+
+### Custom Format Examples
+
+**Italian Job Analysis:**
+```
+titolo lavoro, azienda, sede di lavoro, tipo contratto, esperienza richiesta
+```
+
+**Technical Focus:**
+```
+- Required programming languages
+- Team structure and size
+- Remote work policy
+- Salary range
+- Growth opportunities
+```
+
+**Quick Overview:**
+```
+Company, Location, Salary
+```
+
+**Comprehensive Analysis:**
+```
+Job Title
+• Company Background
+- Compensation Package
+- Work Environment (remote/hybrid/onsite)
+- Required Experience Level
+- Team Dynamics
+- Career Growth Potential
+```
 
 ## Example Output
 
 ### Predefined Format
-Structured JSON output automatically formatted for display:
+Selected sections (Title, Company, Salary, Location, Benefits):
 ```
-Job Title: Senior Software Engineer
-Company: Tech Corp
-Salary: $120,000 - $150,000
-Location: Remote / San Francisco, CA
-Benefits: Health insurance, 401k matching, unlimited PTO
-Required Skills: React, Node.js, TypeScript, 5+ years experience
-Team Culture: Collaborative environment, startup culture
+Titolo Lavoro: Senior Software Engineer
+Azienda: Tech Corp
+Stipendio: €80.000 - €120.000
+Luogo di Lavoro: Remoto / Milano, IT
+Benefit: Assicurazione sanitaria, buoni pasto, ferie flessibili
 ```
 
-### Custom Format
-For the prompt "Focus on technical requirements and team structure", the JSON response is automatically formatted:
+### Custom Format Examples
+
+**Input:** `"titolo lavoro, azienda, tipo contratto, orario lavorativo"`
 ```
-Job Title: Senior Software Engineer
-Company: Tech Corp
-Required Skills: 5+ years experience with React and Node.js, TypeScript, GraphQL, AWS cloud services
-Team Culture: Team of 8 engineers, report to Engineering Manager, collaborate with Product and Design teams, mentoring junior developers expected
+Titolo lavoro: Senior Software Engineer
+Azienda: Tech Corp
+Tipo contratto: Tempo indeterminato
+Orario lavorativo: Full-time, flessibile
+```
+
+**Input:** `"- programming languages\n- team size\n- remote policy"`
+```
+Programming languages: JavaScript, TypeScript, React, Node.js
+Team size: 8 engineers in the development team
+Remote policy: Fully remote with optional office access
+```
+
+**Input:** `"Company Background, Growth Opportunities, Work-Life Balance"`
+```
+Company Background: Fast-growing fintech startup founded in 2019
+Growth Opportunities: Career advancement path to Lead Engineer role
+Work-Life Balance: Flexible hours, unlimited PTO, no overtime expectations
 ```
 
 ## File Structure
@@ -63,9 +114,11 @@ linkedin-jobs-analyzer/
 ├── popup.html             # Extension popup interface
 ├── popup.js               # Popup logic and UI interactions
 ├── content.js             # LinkedIn page content extraction
-├── background.js          # AI service integration
+├── background.js          # AI service integration + SchemaManager
 ├── options.html           # Settings page
 ├── options.js             # Settings management
+├── CLAUDE.md              # Project documentation
+├── workflow-generate-summary.md  # Technical workflow documentation
 └── README.md              # This file
 ```
 
@@ -73,9 +126,13 @@ linkedin-jobs-analyzer/
 
 - **Manifest Version**: 3
 - **Permissions**: activeTab, scripting, storage
-- **AI Service**: OpenAI GPT-4.1 mini with structured JSON output
-- **Content Extraction**: Multiple selector strategies for robust data extraction
+- **AI Service**: OpenAI GPT-4.1 mini with structured outputs (`json_schema` + `strict: true`)
+- **Schema Generation**: Dynamic JSON schema creation based on user input via SchemaManager class
+- **Field Processing**: Automatic parsing of multiple delimiters and camelCase conversion
+- **Content Extraction**: Multiple selector strategies for robust LinkedIn data extraction
 - **Storage**: Chrome storage API for secure API key management
+- **JSON Reliability**: 100% valid JSON output (vs ~35% with basic JSON mode)
+- **Multilingual**: Full English/Italian support with technical term preservation
 
 ## Privacy & Security
 
@@ -86,9 +143,13 @@ linkedin-jobs-analyzer/
 
 ## Troubleshooting
 
-- **Extension not working**: Ensure you're on a LinkedIn job posting page
-- **No summary generated**: Check that your API key is configured correctly
+- **Extension not working**: Ensure you're on a LinkedIn job posting page (`linkedin.com/jobs/view/...`)
+- **No summary generated**: Check that your OpenAI API key is configured correctly in Options
 - **Extraction issues**: Try refreshing the LinkedIn page and ensure it's fully loaded
+- **Custom fields not working**: Verify your field names can be converted to valid identifiers
+- **Schema errors**: Ensure your custom format doesn't exceed OpenAI token limits
+- **Invalid JSON responses**: The extension uses structured outputs for 100% reliability - check API key validity
+- **Language issues**: Switch language in the popup to match your preference (EN/IT)
 
 ## Development
 

@@ -2,14 +2,23 @@
 
 ## Overview
 
-This document explains the complete workflow that occurs when a user clicks the "Generate Summary" button in the LinkedIn Job Analyzer Chrome extension. The process involves multiple components working together to extract job data, generate AI-powered summaries using OpenAI's structured JSON output, and display results to the user.
+This document explains the complete workflow that occurs when a user clicks the "Generate Summary" button in the LinkedIn Job Analyzer Chrome extension. The process involves multiple components working together to extract job data, generate AI-powered summaries using OpenAI's structured outputs with dynamic schema generation, and display results to the user.
+
+## Key Technical Features
+
+- **Dynamic Schema Generation**: SchemaManager creates JSON schemas on-the-fly based on user input
+- **Infinite Field Flexibility**: Support for 1 to unlimited custom fields
+- **Multiple Input Formats**: Comma, newline, dash, and bullet delimiter support
+- **OpenAI Structured Outputs**: 100% JSON reliability with `json_schema` + `strict: true`
+- **Smart Field Mapping**: Converts user field names to camelCase and back for display
 
 ## Components Involved
 
 1. **Popup Interface** (`popup.html` + `popup.js`) - User interface and interaction handling
 2. **Content Script** (`content.js`) - LinkedIn page data extraction
 3. **Background Service** (`background.js`) - AI service integration and message routing
-4. **Chrome Extension APIs** - Inter-component communication and storage
+4. **SchemaManager Class** (`background.js`) - Dynamic JSON schema generation and field processing
+5. **Chrome Extension APIs** - Inter-component communication and storage
 
 ## Detailed Workflow
 
@@ -53,79 +62,101 @@ This document explains the complete workflow that occurs when a user clicks the 
    - Hides any previous error or info messages
    - Calls `generateSummary()` method
 
-### Phase 4: Prompt Construction
+### Phase 4: Dynamic Schema Generation and Prompt Construction
 
-7. **Prompt Building for JSON Output** (`popup.js:282-303`)
-   - **Predefined Format** (`popup.js:305-342`):
-     - Gets selected sections from checkboxes
-     - Builds JSON schema request with only requested fields
-     - Includes language-specific instructions for JSON response
-     - Adds technical term preservation rules for Italian
+7. **Schema Generation** (`background.js:SchemaManager`)
+   - **Predefined Format**:
+     - Uses fixed schema with 7 predefined fields (jobTitle, company, salary, location, benefits, requiredSkills, teamCulture)
+     - Generates schema with only selected checkbox fields as required
+     - Applies language-specific field descriptions
    
-   - **Custom Format** (`popup.js:397-408`):
-     - Uses user's natural language input
-     - Wraps with JSON schema requirements
-     - Ensures structured output regardless of custom request
+   - **Custom Format**:
+     - Parses user input with `parseCustomPrompt()` method
+     - Splits by multiple delimiters: `,`, `\n`, `-`, `•`, `·`, `*`
+     - Converts field names to camelCase with `createFieldKey()` (e.g., "titolo lavoro" → `titoloLavoro`)
+     - Generates dynamic JSON schema with user-requested fields
+     - Ensures OpenAI compliance with `additionalProperties: false`
 
-8. **Job Data Formatting** (`popup.js:410-425`)
+8. **Prompt Building** (`popup.js:282-303`)
+   - Constructs full prompt with job data and user instructions
+   - Passes custom prompt to SchemaManager for schema generation
+   - Includes enhanced system prompts to prevent AI hallucination
+
+9. **Job Data Formatting** (`popup.js:427-440`)
    - Combines extracted job data into structured text
    - Includes: title, company, location, salary, description, benefits, requirements
    - Merges with constructed prompt for AI processing
 
 ### Phase 5: AI Service Communication
 
-9. **Background Service Call** (`popup.js:426-436`)
-   - Sends message to background script with action: 'generateSummary'
-   - Includes complete prompt with job data
-   - Waits for AI service response
+10. **Background Service Call** (`popup.js:447-454`)
+    - Sends message to background script with action: 'generateSummary'
+    - Includes complete prompt, selected fields, language, format type, and custom prompt
+    - Waits for AI service response
 
-10. **AI Service Processing** (`background.js:229-242`)
-    - Receives message from popup
-    - Calls `handleGenerateSummary()` function
-    - Routes to appropriate AI service based on settings
+11. **AI Service Processing** (`background.js:348-359`)
+    - Receives message from popup with all parameters
+    - Calls `handleGenerateSummary()` function with format detection
+    - Routes to OpenAI service with dynamic schema generation
 
-### Phase 6: OpenAI Integration
+### Phase 6: OpenAI Structured Outputs Integration
 
-11. **API Key Validation** (`background.js:31-71`)
+12. **API Key Validation** (`background.js:194-217`)
     - Loads API key from Chrome storage
     - Validates OpenAI API key format (starts with 'sk-')
     - Ensures proper initialization before API calls
 
-12. **OpenAI Structured Output** (`background.js:73-142`)
-    - Uses GPT-4.1 mini model with `response_format: { "type": "json_object" }`
-    - System prompt defines exact JSON schema for consistent output
-    - Constructs API request with system/user messages
+13. **Dynamic Schema Application** (`background.js:220-233`)
+    - Calls SchemaManager with format type and custom prompt
+    - Generates appropriate JSON schema (predefined vs custom)
+    - Creates enhanced system message based on format type
+    - Prevents AI hallucination with explicit "extract only real data" instructions
+
+14. **OpenAI Structured Output Call** (`background.js:235-266`)
+    - Uses GPT-4.1 mini model with `response_format: { "type": "json_schema", "strict": true }`
+    - Applies dynamically generated schema for 100% JSON compliance
+    - Constructs API request with enhanced system/user messages
     - Handles rate limiting and error responses
-    - Parses and validates returned JSON structure
-    - Returns structured data object instead of raw text
+    - Returns guaranteed valid JSON structure
+    - No manual JSON parsing needed (structured outputs guarantee)
 
 ### Phase 7: Error Handling and Fallbacks
 
-14. **Error Management** (`background.js:262-277`)
+15. **Error Management** (`background.js:379-394`)
     - If AI service fails, automatically falls back to mock response
     - Logs detailed error information for debugging
     - Ensures user always receives some form of response
+    - Maintains same format type handling for consistency
 
-15. **Mock JSON Response** (`background.js:211-224`)
+16. **Mock JSON Response** (`background.js:317-343`)
     - Returns structured JSON object when API unavailable
-    - Maintains exact same schema as real API responses
+    - Maintains exact same schema structure as real API responses
+    - Supports both predefined and custom format structures
     - Ensures consistent behavior during testing/fallback scenarios
 
 ### Phase 8: Response Processing and Display
 
-16. **Structured Summary Formatting** (`popup.js:451-491`)
+17. **Format-Specific Display Logic** (`popup.js:475-491`)
     - Receives JSON object from background service
-    - Uses `formatStructuredSummary()` for consistent field rendering
-    - Maps selected sections to corresponding JSON fields
-    - Applies visual styling with consistent formatting
+    - Routes to appropriate formatter based on selected format:
+      - **Predefined Format**: Uses `formatStructuredSummary()` with predefined field mappings
+      - **Custom Format**: Uses `formatCustomSummary()` with dynamic field mapping
+    - Maps camelCase fields back to original user field names for display
+    - Applies consistent visual styling with structured formatting
     - Falls back to legacy text parsing if needed for compatibility
 
-17. **Result Display** (`popup.js:451-457`)
-    - Shows formatted summary in result container
+18. **Custom Field Mapping** (`popup.js:495-547`)
+    - Extracts original field names from user's custom prompt
+    - Creates mapping from camelCase keys back to display names (e.g., `titoloLavoro` → "titolo lavoro")
+    - Uses same parsing logic as SchemaManager for consistency
+    - Handles multiple delimiter types and mixed formatting
+
+19. **Result Display** (`popup.js:475-491`)
+    - Shows formatted summary in result container with proper field labels
     - Hides loading state
     - Displays success state to user
 
-18. **Error Display** (`popup.js:294-302`)
+20. **Error Display** (`popup.js:295-302`)
     - If generation fails, shows localized error message
     - Provides guidance for troubleshooting
     - Maintains UI state for retry attempts
@@ -146,47 +177,54 @@ graph TD
     H --> I{Format Type?}
     
     I -->|Predefined| J[Select Sections via Checkboxes]
-    I -->|Custom| K[Enter Natural Language Prompt]
+    I -->|Custom| K[Enter Natural Language Prompt with Flexible Fields]
     
-    J --> L[Build Structured Prompt]
-    K --> L
+    J --> L[Generate Fixed Schema with Selected Fields]
+    K --> M[Parse Custom Prompt for Field Names]
+    M --> N[Convert to camelCase Identifiers]
+    N --> O[Generate Dynamic JSON Schema]
     
-    L --> M[User Clicks Generate Summary]
-    M --> N[Show Loading State]
-    N --> O[Send Message to Background Service]
+    L --> P[Build Structured Prompt]
+    O --> P
     
-    O --> P[background.js: AIServiceManager]
-    P --> Q[Load API Settings from Storage]
-    Q --> R{API Key Valid?}
+    P --> Q[User Clicks Generate Summary]
+    Q --> R[Show Loading State]
+    R --> S[Send Message with Schema Info to Background Service]
     
-    R -->|No| S[Throw Configuration Error]
-    R -->|Yes| T[Prepare OpenAI Request]
+    S --> T[background.js: AIServiceManager + SchemaManager]
+    T --> U[Load API Settings from Storage]
+    U --> V{API Key Valid?}
     
-    T -->|OpenAI| U[Call GPT-4.1 mini API with JSON Schema]
+    V -->|No| W[Throw Configuration Error]
+    V -->|Yes| X[Apply Dynamic Schema to OpenAI Request]
     
-    U --> W{API Call Success?}
+    X --> Y[Call GPT-4.1 mini API with Structured Outputs]
     
-    W -->|Yes| X[Return AI Summary]
-    W -->|No| Y[Call Mock AI Fallback]
+    Y --> Z{API Call Success?}
     
-    X --> Z[Format Summary HTML]
-    Y --> Z
+    Z -->|Yes| AA[Return Valid JSON with Custom Fields]
+    Z -->|No| BB[Call Mock AI Fallback with Same Schema]
     
-    Z --> AA[Display Result to User]
+    AA --> CC[Map camelCase Fields Back to Display Names]
+    BB --> CC
     
-    S --> BB[Show Error Message]
-    BB --> CC[Hide Loading State]
+    CC --> DD[Format Summary HTML with Proper Labels]
+    DD --> EE[Display Result to User]
     
-    AA --> DD[Hide Loading State]
-    DD --> EE[Success: Summary Displayed]
+    W --> FF[Show Error Message]
+    FF --> GG[Hide Loading State]
+    
+    EE --> HH[Hide Loading State]
+    HH --> II[Success: Summary Displayed]
     
     style A fill:#e1f5fe
-    style EE fill:#e8f5e8
-    style BB fill:#ffebee
+    style II fill:#e8f5e8
+    style FF fill:#ffebee
     style E fill:#fff3e0
-    style P fill:#f3e5f5
-    style U fill:#e8eaf6
-    style V fill:#e8eaf6
+    style T fill:#f3e5f5
+    style M fill:#fff8e1
+    style O fill:#f1f8e9
+    style Y fill:#e8eaf6
 ```
 
 ## Technical Implementation Details
@@ -202,19 +240,34 @@ The `LinkedInJobExtractor` class (`content.js:1-248`) uses multiple selector str
 
 ### AI Service Integration
 
-The `AIServiceManager` class (`background.js:1-226`) provides:
+The `AIServiceManager` class (`background.js:165-396`) provides:
 
-- **OpenAI integration**: Dedicated GPT-4.1 mini support with structured JSON output
-- **JSON schema enforcement**: Guarantees consistent response structure
+- **OpenAI Structured Outputs**: GPT-4.1 mini with `json_schema` + `strict: true` for 100% reliability
+- **Dynamic Schema Integration**: Works with SchemaManager for real-time schema generation
+- **Enhanced System Prompts**: Prevents AI hallucination with explicit data extraction instructions
 - **API key validation**: OpenAI format checking (sk-prefix)
-- **Error resilience**: Automatic fallback to structured mock JSON responses
+- **Error resilience**: Automatic fallback to structured mock JSON responses with same schema
 - **Comprehensive logging**: Detailed console output for debugging and monitoring
+
+### SchemaManager Architecture
+
+The `SchemaManager` class (`background.js:1-164`) provides:
+
+- **Dynamic Schema Generation**: Creates OpenAI-compliant JSON schemas from user input
+- **Multi-delimiter Parsing**: Handles `,`, `\n`, `-`, `•`, `·`, `*` in user prompts
+- **camelCase Conversion**: Transforms "titolo lavoro" → `titoloLavoro` for JSON field names
+- **Schema Caching**: Performance optimization for repeated schema requests
+- **Multilingual Descriptions**: Field descriptions in user's selected language
+- **OpenAI Compliance**: Enforces `additionalProperties: false` requirement
 
 ### User Interface Responsiveness
 
-The `PopupController` class (`popup.js:1-514`) ensures:
+The `PopupController` class (`popup.js:1-648`) ensures:
 
 - **Real-time validation**: Button states update as user makes selections
+- **Format-specific handling**: Routes to appropriate display logic for predefined vs custom formats
+- **Dynamic field mapping**: Maps camelCase identifiers back to original user field names
+- **Multi-delimiter support**: Parses user input with same logic as SchemaManager
 - **Localization support**: Dynamic language switching with immediate UI updates
 - **Progressive enhancement**: Graceful degradation when APIs unavailable
 - **Visual feedback**: Loading states, success indicators, and error messages
@@ -224,14 +277,36 @@ The `PopupController` class (`popup.js:1-514`) ensures:
 - **API Key**: Users must configure OpenAI API key in extension options
 - **Permissions**: Extension requires `activeTab`, `storage`, and host permissions for LinkedIn
 - **Browser Support**: Chrome extension manifest v3 compatible
+- **OpenAI Model**: Requires GPT-4.1 mini for structured outputs support
+- **Token Limits**: Custom field schemas limited by OpenAI token constraints
 
 ## Error Scenarios and Handling
 
 1. **Invalid LinkedIn Page**: Shows navigation guidance
 2. **Data Extraction Failure**: Displays retry instructions
 3. **Missing API Key**: Directs to options page for configuration
-4. **API Service Unavailable**: Falls back to mock response
+4. **API Service Unavailable**: Falls back to mock response with same schema structure
 5. **Network Connectivity Issues**: Shows connection error messages
 6. **Invalid API Key Format**: Provides format guidance for corrections
+7. **Schema Generation Failures**: Fallback to single general field for malformed custom prompts
+8. **OpenAI Structured Output Errors**: Automatic retry with adjusted parameters
+9. **Custom Field Parsing Issues**: Graceful handling of special characters and unsupported formats
 
-This workflow ensures reliable job analysis functionality while maintaining user experience across various failure scenarios.
+## Key Improvements Over Previous Version
+
+### Reliability Improvements
+- **100% JSON Validity**: Structured outputs eliminate JSON parsing errors
+- **Dynamic Schema Compliance**: All responses conform to user-defined schemas
+- **Enhanced Error Prevention**: System prompts prevent AI hallucination
+
+### Flexibility Improvements  
+- **Infinite Field Support**: No longer limited to fixed field count
+- **Multi-format Input**: Support for various delimiter types and mixed formatting
+- **Real-time Schema Generation**: Custom schemas created on-demand
+
+### User Experience Improvements
+- **Preserved Field Names**: User's original field names maintained in display
+- **Intelligent Field Mapping**: Seamless conversion between display and JSON formats
+- **Enhanced Multilingual**: Better technical term preservation and language-aware schemas
+
+This workflow ensures reliable job analysis functionality with infinite flexibility while maintaining user experience across various scenarios.
