@@ -71,4 +71,5 @@ zip -r linkedin-job-analyzer.zip . -x "*.git*" "CLAUDE.md" "user-story-job-summa
 
 ## Claude code behavior
 
-- Use frequently the Web tools and MCP tools
+- Use frequently the WebFetch, WebSearch and MCP tools
+- When using external libraries, ALWAYS use WebFetch tool to ensure you use them correctly.

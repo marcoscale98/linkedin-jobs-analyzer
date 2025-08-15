@@ -363,6 +363,28 @@ Response rules:
     return sections;
   }
 
+  getSelectedFieldNames() {
+    const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+    const selectedFields = [];
+    
+    checkboxes.forEach((checkbox, index) => {
+      if (checkbox.checked) {
+        const fieldMap = {
+          0: ['jobTitle', 'company'],
+          1: ['salary'],
+          2: ['location'],
+          3: ['benefits'],
+          4: ['requiredSkills'],
+          5: ['teamCulture']
+        };
+        selectedFields.push(...fieldMap[index]);
+      }
+    });
+    
+    // Return null if no specific fields selected (use all fields)
+    return selectedFields.length > 0 ? selectedFields : null;
+  }
+
   getDefaultPrompt() {
     if (this.currentLanguage === 'it') {
       return `Analizza la seguente offerta di lavoro e restituisci un oggetto JSON completo.
@@ -417,16 +439,21 @@ Requirements: ${jobData.requirements}
 Job Posting Data:
 ${jobText}`;
 
+    // Get selected fields for dynamic schema generation
+    const selectedFields = this.getSelectedFieldNames();
+
     const response = await chrome.runtime.sendMessage({
       action: 'generateSummary',
-      prompt: fullPrompt
+      prompt: fullPrompt,
+      selectedFields: selectedFields,
+      language: this.currentLanguage
     });
 
     if (!response.success) {
       throw new Error(response.error || 'AI service failed');
     }
 
-    // Response is now a JSON object instead of text
+    // Response is now a JSON object from structured outputs
     return response.summary;
   }
 
