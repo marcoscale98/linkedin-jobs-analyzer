@@ -18,10 +18,11 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 ## Installation
 
 1. Download or clone this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension directory
-5. Configure your AI API key in the extension options
+2. Install dependencies: `npm install`
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" in the top right
+5. Click "Load unpacked" and select the extension directory
+6. Configure your AI API key in the extension options
 
 ## Setup
 
@@ -110,17 +111,42 @@ Work-Life Balance: Flexible hours, unlimited PTO, no overtime expectations
 
 ```
 linkedin-jobs-analyzer/
+├── src/                   # Source files
+│   ├── popup.html         # Extension popup interface
+│   ├── popup.js           # Popup logic and UI interactions
+│   ├── content.js         # LinkedIn page content extraction
+│   ├── background.js      # AI service integration + SchemaManager
+│   ├── options.html       # Settings page
+│   └── options.js         # Settings management
+├── test/                  # Test suites
+│   ├── setup.js           # Global test setup and Chrome API mocking
+│   ├── SchemaManager.test.js       # Schema generation tests
+│   ├── LinkedInJobExtractor.test.js # Content extraction tests
+│   ├── OptionsManager.test.js      # Settings management tests
+│   └── simple.test.js     # Core functionality tests
 ├── manifest.json          # Extension configuration
-├── popup.html             # Extension popup interface
-├── popup.js               # Popup logic and UI interactions
-├── content.js             # LinkedIn page content extraction
-├── background.js          # AI service integration + SchemaManager
-├── options.html           # Settings page
-├── options.js             # Settings management
+├── package.json           # Dependencies and test scripts
+├── vitest.config.js       # Test framework configuration
 ├── CLAUDE.md              # Project documentation
-├── workflow-generate-summary.md  # Technical workflow documentation
 └── README.md              # This file
 ```
+
+## Testing
+
+Run the comprehensive test suite to verify functionality:
+
+```bash
+npm test                # Run tests in watch mode
+npm run test:run       # Single test run
+npm run test:coverage  # Generate coverage report
+npm run test:ui        # Interactive test UI
+```
+
+### Test Coverage
+- **SchemaManager**: Dynamic schema generation, field parsing, caching, multilingual support
+- **LinkedInJobExtractor**: Content extraction, multiple selector strategies, error handling
+- **OptionsManager**: Settings management, API key validation, storage operations  
+- **Core Functions**: URL detection, API key validation, text processing, summary formatting
 
 ## Technical Details
 
@@ -133,6 +159,7 @@ linkedin-jobs-analyzer/
 - **Storage**: Chrome storage API for secure API key management
 - **JSON Reliability**: 100% valid JSON output (vs ~35% with basic JSON mode)
 - **Multilingual**: Full English/Italian support with technical term preservation
+- **Testing Framework**: Vitest with sinon-chrome for Chrome API mocking and comprehensive coverage
 
 ## Privacy & Security
 
@@ -155,10 +182,18 @@ linkedin-jobs-analyzer/
 
 To contribute or modify:
 
-1. Make changes to the source files
-2. Reload the extension in `chrome://extensions/`
-3. Test on various LinkedIn job postings
-4. Submit pull requests for improvements
+1. Install dependencies: `npm install`
+2. Make changes to the source files in `src/`
+3. Run tests: `npm test` or `npm run test:coverage`
+4. Reload the extension in `chrome://extensions/`
+5. Test on various LinkedIn job postings
+6. Submit pull requests for improvements
+
+### Development Workflow
+- Source files are in `src/` directory
+- Tests are in `test/` directory  
+- Use `npm test` for continuous testing during development
+- All Chrome APIs are properly mocked for unit testing
 
 ## License
 

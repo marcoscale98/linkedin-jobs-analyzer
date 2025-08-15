@@ -16,7 +16,7 @@
   ],
   
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background.js"
   },
   
   "content_scripts": [
@@ -27,15 +27,15 @@
         "https://www.linkedin.com/jobs/collections/*",
         "https://it.linkedin.com/jobs/collections/*"
       ],
-      "js": ["content.js"],
+      "js": ["src/content.js"],
       "run_at": "document_idle"
     }
   ],
   
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup.html",
     "default_title": "Analyze LinkedIn Job"
   },
   
-  "options_page": "options.html"
+  "options_page": "src/options.html"
 }
