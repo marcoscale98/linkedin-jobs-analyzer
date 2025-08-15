@@ -19,35 +19,35 @@ class SchemaManager {
         type: "string",
         description: {
           en: "Salary range, compensation details, or 'Not specified'",
-          it: "Fascia salariale, dettagli compensi, o 'Non specificato'"
+          it: "Fascia salariale e dettagli compensi TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
       },
       location: {
         type: "string",
         description: {
           en: "Work location, remote options, or 'Not specified'",
-          it: "Luogo di lavoro, opzioni remote, o 'Non specificato'"
+          it: "Luogo di lavoro e opzioni remote TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
       },
       benefits: {
         type: "string",
         description: {
           en: "Benefits, perks, additional compensation, or 'Not specified'",
-          it: "Benefit, vantaggi, compensi aggiuntivi, o 'Non specificato'"
+          it: "Benefit, vantaggi e compensi aggiuntivi TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
       },
       requiredSkills: {
         type: "string",
         description: {
           en: "Required skills, experience, qualifications, or 'Not specified'",
-          it: "Competenze richieste, esperienza, qualifiche, o 'Non specificato'"
+          it: "Competenze, esperienza e qualifiche richieste TRADOTTE IN ITALIANO (eccetto nomi di tecnologie), o 'Non specificato'"
         }
       },
       teamCulture: {
         type: "string",
         description: {
           en: "Team culture, company values, work environment, or 'Not specified'",
-          it: "Cultura del team, valori aziendali, ambiente di lavoro, o 'Non specificato'"
+          it: "Cultura del team, valori aziendali e ambiente di lavoro TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
       }
     };
@@ -107,7 +107,7 @@ class SchemaManager {
       properties[fieldKey] = {
         type: "string",
         description: language === 'it'
-          ? `${fieldInfo.name} - estratto dall'offerta di lavoro, o "${notSpecifiedValue}" se non disponibile`
+          ? `${fieldInfo.name} - estratto dall'offerta di lavoro e TRADOTTO IN ITALIANO, o "${notSpecifiedValue}" se non disponibile`
           : `${fieldInfo.name} - extracted from job posting, or "${notSpecifiedValue}" if not available`
       };
       required.push(fieldKey);
@@ -226,10 +226,10 @@ class AIServiceManager {
     
     const systemMessage = isCustomFormat 
       ? (language === 'it' 
-          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare o immaginare informazioni. L'utente ha richiesto informazioni specifiche che sono state mappate nei campi dello schema JSON. Usa SOLO i dati reali forniti. Se le informazioni non sono disponibili nei dati forniti, usa SEMPRE "${notSpecifiedValue}". NON creare contenuti falsi o di fantasia. Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni.`
+          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare o immaginare informazioni. L'utente ha richiesto informazioni specifiche che sono state mappate nei campi dello schema JSON. Usa SOLO i dati reali forniti. Se le informazioni non sono disponibili nei dati forniti, usa SEMPRE "${notSpecifiedValue}". NON creare contenuti falsi o di fantasia. DEVI SEMPRE RISPONDERE IN ITALIANO: traduci in italiano tutti i contenuti estratti (descrizioni, benefit, requisiti, etc.), mantieni in inglese SOLO i termini tecnici specifici come nomi di tecnologie, linguaggi di programmazione, strumenti software.`
           : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent or imagine information. The user has requested specific information that has been mapped to the JSON schema fields. Use ONLY the real data provided. If information is not available in the provided data, ALWAYS use "${notSpecifiedValue}". DO NOT create false or fictional content.`)
       : (language === 'it' 
-          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare informazioni. Devi rispondere con JSON strutturato che segue esattamente lo schema fornito. Se le informazioni non sono disponibili nei dati forniti, usa "${notSpecifiedValue}" per quel campo. Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni.`
+          ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare informazioni. Devi rispondere con JSON strutturato che segue esattamente lo schema fornito. Se le informazioni non sono disponibili nei dati forniti, usa "${notSpecifiedValue}" per quel campo. DEVI SEMPRE RISPONDERE IN ITALIANO: traduci in italiano tutti i contenuti estratti (descrizioni, benefit, requisiti, etc.), mantieni in inglese SOLO i termini tecnici specifici come nomi di tecnologie, linguaggi di programmazione, strumenti software.`
           : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent information. You must respond with structured JSON that follows the provided schema exactly. If information is not available in the provided data, use "${notSpecifiedValue}" for that field.`);
     
     const requestBody = {

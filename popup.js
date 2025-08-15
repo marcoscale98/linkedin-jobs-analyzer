@@ -565,18 +565,24 @@ ${jobText}`;
       teamCulture: 'Team Culture'
     };
 
+    const notSpecifiedValue = this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified';
     const selectedSections = this.getSelectedSections();
     const fieldsToShow = selectedSections.length > 0 ? this.mapSectionsToFields(selectedSections) : Object.keys(translations);
     
     return fieldsToShow.map(field => {
-      const value = data[field] || (this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified');
-      const label = translations[field];
+      const value = data[field] || notSpecifiedValue;
+      const label = translations[field] || field;
+      
+      // Skip fields with "Non specificato" / "Not specified" if they weren't explicitly requested
+      if ((value === notSpecifiedValue || !value || value.trim() === '') && selectedSections.length > 0) {
+        return '';
+      }
       
       return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
                 <span style="font-weight: 600; color: #333;">${label}:</span>
                 <span style="margin-left: 8px; color: #555;">${value}</span>
               </div>`;
-    }).join('');
+    }).filter(html => html.length > 0).join('');
   }
 
   mapSectionsToFields(selectedSections) {
