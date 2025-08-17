@@ -7,12 +7,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "log-bridge": "node dev-tools/start-log-bridge.js",
-    "inject-bridge": "./dev-tools/inject-bridge.sh inject",
-    "remove-bridge": "./dev-tools/inject-bridge.sh remove",
-    "bridge-status": "./dev-tools/inject-bridge.sh status",
-    "dev": "npm run inject-bridge && npm run log-bridge",
-    "dev:clean": "npm run remove-bridge"
+    "logs": "node dev-tools/simple-log-server.js",
+    "add-bridge": "./dev-tools/add-console-bridge.sh add",
+    "remove-bridge": "./dev-tools/add-console-bridge.sh remove"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.9",
