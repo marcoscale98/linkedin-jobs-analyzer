@@ -1,29 +1,31 @@
 {
   "name": "linkedin-job-analyzer",
   "version": "1.0.0",
-  "description": "AI-powered job posting summarizer for LinkedIn",
-  "type": "module",
+  "description": "Chrome extension using AI to generate structured summaries of LinkedIn job postings",
+  "main": "src/background.js",
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "log-bridge": "node dev-tools/start-log-bridge.js",
+    "inject-bridge": "./dev-tools/inject-bridge.sh inject",
+    "remove-bridge": "./dev-tools/inject-bridge.sh remove",
+    "bridge-status": "./dev-tools/inject-bridge.sh status",
+    "dev": "npm run inject-bridge && npm run log-bridge",
+    "dev:clean": "npm run remove-bridge"
   },
   "devDependencies": {
-    "vitest": "^2.1.8",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@vitest/coverage-v8": "^2.1.8",
-    "@vitest/ui": "^2.1.8",
-    "jsdom": "^25.0.1"
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.1.9",
+    "ws": "^8.18.3"
   },
   "keywords": [
     "chrome-extension",
     "linkedin",
-    "job-analyzer",
     "ai",
+    "job-analysis",
     "openai"
   ],
-  "author": "",
+  "author": "Marco",
   "license": "MIT"
 }
