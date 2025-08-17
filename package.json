@@ -13,8 +13,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.9",
-    "vitest": "^2.1.9",
-    "ws": "^8.18.3"
+    "vitest": "^2.1.9"
   },
   "keywords": [
     "chrome-extension",

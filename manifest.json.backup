@@ -5,7 +5,6 @@
   "description": "AI-powered job posting summarizer for LinkedIn",
   
   "permissions": [
-    "http://localhost/*",
     "activeTab",
     "scripting",
     "storage"
