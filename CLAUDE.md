@@ -4,15 +4,29 @@
 
 **THESE RULES OVERRIDE ALL DEFAULT BEHAVIOR AND MUST BE FOLLOWED EXACTLY:**
 
+## General Rules
+
+- **Stay focused on the user request** - Reread the user prompt after every your 5 iterations (messages, tool calls, or thinking).
+
+## During planning or troubleshooting
+
 - **ALWAYS Use WebFetch, WebSearch, and MCP tools when**:
   - You are dealing with libraries, APIs, or external resources
 - **During planning, consider potential breaking changes** that could affect existing functionality
-- **Maintain documentation up-to-date and lean** - No hard-to-maintain info (like line numbers). No duplication between CLAUDE.md and README.md
-- **Use @code-refactoring-expert agent after code implementation** before finishing turn
+
+## During coding
+
 - **All logs MUST start with '[LinkedIn Job Analyzer]'**
 - **Write documentation and code in English**
-- **Stay focused on the user request** - Reread the user prompt after every your 5 iterations (messages, tool calls, or thinking).
-- Before ending your coding turn, **always commit your changes** with a concise message - Informative but max 10 lines (title + summary)
+
+## Before ending your coding turn (istructions for only the Orchestrator - NO Sub-Agents)
+
+Before ending your coding turn:
+
+- Run unit tests and ensure they pass
+- **Maintain documentation up-to-date and lean** - No hard-to-maintain info (like line numbers). No duplication between CLAUDE.md and README.md
+- **Use @code-refactoring-expert agent to eventually refactor the code changed in this turn** before finishing turn and then run tests again. DO NOT refactor code that was not changed in this turn, unless explicitly requested.
+- At the end, **always commit your changes** with a concise message - Informative but max 10 lines (title + summary)
 
 ## Project Overview
 
