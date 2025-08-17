@@ -572,7 +572,7 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
       
       // Should not throw error during initialization - catch the promise rejection
       try {
-        await newOptionsManager.ensureInitialized();
+        await newOptionsManager.init();
       } catch (error) {
         // Expected to catch the storage error
         expect(error.message).toBe('Storage unavailable');
