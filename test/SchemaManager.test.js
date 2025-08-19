@@ -53,6 +53,34 @@ class SchemaManager {
           en: "Team culture, company values, work environment, or 'Not specified'",
           it: "Cultura del team, valori aziendali e ambiente di lavoro TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
+      },
+      companyReviews: {
+        type: "string",
+        description: {
+          en: "Overall employee satisfaction summary from recent web search of review platforms like Glassdoor, Indeed, and similar sites, or 'Not specified'",
+          it: "Riassunto generale della soddisfazione dei dipendenti da ricerca web recente su piattaforme di recensioni come Glassdoor, Indeed e simili, o 'Non specificato'"
+        }
+      },
+      workLifeBalance: {
+        type: "string",
+        description: {
+          en: "Work-life balance insights from recent employee reviews found through web search, or 'Not specified'",
+          it: "Informazioni sull'equilibrio vita-lavoro da recensioni recenti dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
+      },
+      managementQuality: {
+        type: "string",
+        description: {
+          en: "Management and leadership feedback from employee review platforms found through web search, or 'Not specified'",
+          it: "Feedback su management e leadership da piattaforme di recensioni dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
+      },
+      companyCultureReviews: {
+        type: "string",
+        description: {
+          en: "Company culture observations from latest employee reviews found through web search, or 'Not specified'",
+          it: "Osservazioni sulla cultura aziendale dalle ultime recensioni dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
       }
     };
     
@@ -197,10 +225,14 @@ describe('[LinkedIn Job Analyzer] SchemaManager', () => {
       
       expect(schema.type).toBe('object');
       expect(schema.additionalProperties).toBe(false);
-      expect(Object.keys(schema.properties)).toHaveLength(7);
+      expect(Object.keys(schema.properties)).toHaveLength(11);
       expect(schema.properties.jobTitle).toBeDefined();
       expect(schema.properties.company).toBeDefined();
       expect(schema.properties.salary).toBeDefined();
+      expect(schema.properties.companyReviews).toBeDefined();
+      expect(schema.properties.workLifeBalance).toBeDefined();
+      expect(schema.properties.managementQuality).toBeDefined();
+      expect(schema.properties.companyCultureReviews).toBeDefined();
     });
 
     it('should generate schema for selected fields only', () => {
@@ -395,6 +427,55 @@ describe('[LinkedIn Job Analyzer] SchemaManager', () => {
       const schema = schemaManager.generateJobSchema(selectedFields);
       
       expect(schema.required).toEqual(selectedFields);
+    });
+  });
+
+  describe('Company Review Fields', () => {
+    it('should include all company review fields in field definitions', () => {
+      expect(schemaManager.fieldDefinitions.companyReviews).toBeDefined();
+      expect(schemaManager.fieldDefinitions.workLifeBalance).toBeDefined();
+      expect(schemaManager.fieldDefinitions.managementQuality).toBeDefined();
+      expect(schemaManager.fieldDefinitions.companyCultureReviews).toBeDefined();
+    });
+
+    it('should generate schema with company review fields only', () => {
+      const reviewFields = ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'];
+      const schema = schemaManager.generateJobSchema(reviewFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(4);
+      expect(schema.properties.companyReviews).toBeDefined();
+      expect(schema.properties.workLifeBalance).toBeDefined();
+      expect(schema.properties.managementQuality).toBeDefined();
+      expect(schema.properties.companyCultureReviews).toBeDefined();
+    });
+
+    it('should have web search descriptions for company review fields', () => {
+      const schema = schemaManager.generateJobSchema(['companyReviews'], 'en');
+      const companyReviewsDesc = schema.properties.companyReviews.description;
+      
+      expect(companyReviewsDesc).toContain('web search');
+      expect(companyReviewsDesc).toContain('Glassdoor');
+      expect(companyReviewsDesc).toContain('Indeed');
+    });
+
+    it('should have Italian web search descriptions for company review fields', () => {
+      const schema = schemaManager.generateJobSchema(['workLifeBalance'], 'it');
+      const workLifeBalanceDesc = schema.properties.workLifeBalance.description;
+      
+      expect(workLifeBalanceDesc).toContain('ricerca web');
+      expect(workLifeBalanceDesc).toContain('Non specificato');
+    });
+
+    it('should generate combined traditional and review fields schema', () => {
+      const mixedFields = ['jobTitle', 'company', 'companyReviews', 'workLifeBalance'];
+      const schema = schemaManager.generateJobSchema(mixedFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(4);
+      expect(schema.properties.jobTitle).toBeDefined();
+      expect(schema.properties.company).toBeDefined();
+      expect(schema.properties.companyReviews).toBeDefined();
+      expect(schema.properties.workLifeBalance).toBeDefined();
+      expect(schema.required).toEqual(mixedFields);
     });
   });
 });

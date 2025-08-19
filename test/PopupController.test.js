@@ -23,6 +23,7 @@ function createDOM() {
           <label><input type="checkbox"> <span data-text="benefits_perks">Benefits & Perks</span></label>
           <label><input type="checkbox"> <span data-text="required_skills">Required Skills & Experience</span></label>
           <label><input type="checkbox"> <span data-text="team_culture">Team & Company Culture</span></label>
+          <label><input type="checkbox"> <span data-text="company_reviews">Company Reviews (Web Search)</span></label>
         </div>
       </div>
       
@@ -66,6 +67,7 @@ class PopupController {
         benefits_perks: 'Benefits & Perks',
         required_skills: 'Required Skills & Experience',
         team_culture: 'Team & Company Culture',
+        company_reviews: 'Company Reviews (Web Search)',
         custom_placeholder: 'e.g., Focus on technical requirements and team structure',
         generate_btn: 'Generate Summary',
         analyzing: 'Analyzing job posting...',
@@ -84,6 +86,7 @@ class PopupController {
         benefits_perks: 'Benefit e Vantaggi',
         required_skills: 'Competenze ed Esperienza Richieste',
         team_culture: 'Team e Cultura Aziendale',
+        company_reviews: 'Recensioni Azienda (Ricerca Web)',
         custom_placeholder: 'es. Concentrati sui requisiti tecnici e la struttura del team',
         generate_btn: 'Genera Riassunto',
         analyzing: 'Analizzando l\'offerta di lavoro...',
@@ -291,6 +294,7 @@ class PopupController {
       const selectedFields = this.getSelectedFieldNames();
       const isCustomFormat = this.selectedFormat === 'custom';
       const customPrompt = isCustomFormat ? document.getElementById('custom-prompt')?.value.trim() || '' : '';
+      const hasCompanyReviews = this.hasCompanyReviewsSelected();
 
       const response = await chrome.runtime.sendMessage({
         action: 'generateSummary',
@@ -298,7 +302,8 @@ class PopupController {
         selectedFields: selectedFields,
         language: this.currentLanguage,
         isCustomFormat: isCustomFormat,
-        customPrompt: customPrompt
+        customPrompt: customPrompt,
+        hasCompanyReviews: hasCompanyReviews
       });
 
       if (!response.success) {
@@ -329,13 +334,19 @@ class PopupController {
           2: ['location'],
           3: ['benefits'],
           4: ['requiredSkills'],
-          5: ['teamCulture']
+          5: ['teamCulture'],
+          6: ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
         };
         selectedFields.push(...fieldMap[index]);
       }
     });
     
     return selectedFields.length > 0 ? selectedFields : null;
+  }
+
+  hasCompanyReviewsSelected() {
+    const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+    return checkboxes[6] && checkboxes[6].checked;
   }
 
   showLoading(show) {
@@ -771,7 +782,8 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
         selectedFields: ['jobTitle', 'company'],
         language: 'en',
         isCustomFormat: false,
-        customPrompt: ''
+        customPrompt: '',
+        hasCompanyReviews: false
       });
       
       expect(showResultSpy).toHaveBeenCalledWith({ jobTitle: 'Software Engineer', company: 'Test Company' });
@@ -986,6 +998,95 @@ describe('[LinkedIn Job Analyzer] PopupController', () => {
       generateBtn?.click();
       
       expect(generateSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('Company Reviews Feature', () => {
+    beforeEach(() => {
+      popupController.setupEventListeners();
+    });
+
+    it('should detect when company reviews checkbox is selected', () => {
+      // Company reviews is the 7th checkbox (index 6)
+      const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+      checkboxes[6].checked = true;
+      
+      const hasCompanyReviews = popupController.hasCompanyReviewsSelected();
+      
+      expect(hasCompanyReviews).toBe(true);
+    });
+
+    it('should detect when company reviews checkbox is not selected', () => {
+      const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+      checkboxes[6].checked = false;
+      
+      const hasCompanyReviews = popupController.hasCompanyReviewsSelected();
+      
+      expect(hasCompanyReviews).toBe(false);
+    });
+
+    it('should include company review fields when company reviews checkbox is selected', () => {
+      const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+      checkboxes[6].checked = true; // Select company reviews
+      
+      const selectedFields = popupController.getSelectedFieldNames();
+      
+      expect(selectedFields).toContain('companyReviews');
+      expect(selectedFields).toContain('workLifeBalance');
+      expect(selectedFields).toContain('managementQuality');
+      expect(selectedFields).toContain('companyCultureReviews');
+    });
+
+    it('should pass hasCompanyReviews parameter in generateSummary message', async () => {
+      popupController.jobData = { title: 'Test Job' };
+      const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+      checkboxes[6].checked = true; // Select company reviews
+      
+      chrome.runtime.sendMessage.mockResolvedValue({ success: true, summary: {} });
+      
+      await popupController.generateSummary();
+      
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'generateSummary',
+          hasCompanyReviews: true
+        })
+      );
+    });
+
+    it('should not pass hasCompanyReviews when checkbox is not selected', async () => {
+      popupController.jobData = { title: 'Test Job' };
+      const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+      checkboxes[6].checked = false; // Unselect company reviews
+      
+      chrome.runtime.sendMessage.mockResolvedValue({ success: true, summary: {} });
+      
+      await popupController.generateSummary();
+      
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'generateSummary',
+          hasCompanyReviews: false
+        })
+      );
+    });
+
+    it('should update UI text for company reviews in English', () => {
+      popupController.currentLanguage = 'en';
+      popupController.updateLanguageUI();
+      
+      const companyReviewsSpan = document.querySelector('[data-text="company_reviews"]');
+      
+      expect(companyReviewsSpan?.textContent).toBe('Company Reviews (Web Search)');
+    });
+
+    it('should update UI text for company reviews in Italian', () => {
+      popupController.currentLanguage = 'it';
+      popupController.updateLanguageUI();
+      
+      const companyReviewsSpan = document.querySelector('[data-text="company_reviews"]');
+      
+      expect(companyReviewsSpan?.textContent).toBe('Recensioni Azienda (Ricerca Web)');
     });
   });
 });
