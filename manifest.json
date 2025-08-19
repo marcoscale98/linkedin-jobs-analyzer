@@ -5,7 +5,6 @@
   "description": "AI-powered job posting summarizer for LinkedIn",
   
   "permissions": [
-    "http://localhost/*",
     "activeTab",
     "scripting",
     "storage"
@@ -13,7 +12,8 @@
   
   "host_permissions": [
     "https://www.linkedin.com/*",
-    "https://it.linkedin.com/*"
+    "https://it.linkedin.com/*",
+    "http://localhost/*"
   ],
   
   "background": {
