@@ -80,6 +80,7 @@ class PopupController {
         benefits_perks: 'Benefits & Perks',
         required_skills: 'Required Skills & Experience',
         team_culture: 'Team & Company Culture',
+        company_reviews: 'Company Reviews (Web Search)',
         custom_placeholder: 'e.g., Focus on technical requirements and team structure',
         generate_btn: 'Generate Summary',
         analyzing: 'Analyzing job posting...',
@@ -102,6 +103,7 @@ class PopupController {
         benefits_perks: 'Benefit e Vantaggi',
         required_skills: 'Competenze ed Esperienza Richieste',
         team_culture: 'Team e Cultura Aziendale',
+        company_reviews: 'Recensioni Azienda (Ricerca Web)',
         custom_placeholder: 'es. Concentrati sui requisiti tecnici e la struttura del team',
         generate_btn: 'Genera Riassunto',
         analyzing: 'Analizzando l\'offerta di lavoro...',
@@ -289,24 +291,56 @@ class PopupController {
       // Give the page time to load
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await chrome.tabs.sendMessage(tabId, { action: 'extractJobData' });
-      
-      if (response && response.success && response.jobData) {
-        this.jobData = response.jobData;
-        this.validateExtractedData();
-      } else if (response && response.error) {
-        this.showError(`Extraction failed: ${response.error}`);
-      } else {
-        this.showError('Unable to extract job data. The page might still be loading - please wait a moment and try again.');
+      // Check if we can communicate with the content script
+      try {
+        const response = await chrome.tabs.sendMessage(tabId, { action: 'extractJobData' });
+        
+        if (response && response.success && response.jobData) {
+          this.jobData = response.jobData;
+          this.validateExtractedData();
+        } else if (response && response.error) {
+          this.showError(`Extraction failed: ${response.error}`);
+        } else {
+          this.showError('Unable to extract job data. The page might still be loading - please wait a moment and try again.');
+        }
+      } catch (connectionError) {
+        // Content script not available - try to inject it
+        if (connectionError.message.includes('Could not establish connection') || 
+            connectionError.message.includes('Receiving end does not exist')) {
+          
+          console.log('[LinkedIn Job Analyzer] Content script not found, attempting to inject...');
+          
+          try {
+            // Inject the content script manually
+            await chrome.scripting.executeScript({
+              target: { tabId: tabId },
+              files: ['src/content.js']
+            });
+            
+            // Wait a moment for the script to initialize
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Try communication again
+            const response = await chrome.tabs.sendMessage(tabId, { action: 'extractJobData' });
+            
+            if (response && response.success && response.jobData) {
+              this.jobData = response.jobData;
+              this.validateExtractedData();
+            } else {
+              this.showError('Unable to extract job data. Please make sure you are on a LinkedIn job posting page.');
+            }
+            
+          } catch (injectionError) {
+            console.error('[LinkedIn Job Analyzer] Failed to inject content script:', injectionError);
+            this.showError('Unable to connect to the page. Please refresh the LinkedIn job page and try again.');
+          }
+        } else {
+          throw connectionError;
+        }
       }
     } catch (error) {
-      // This could be LinkedIn's extension detection causing errors
-      if (error.message.includes('Could not establish connection')) {
-        this.showError('Unable to connect to the page. Please refresh the LinkedIn job page and try again.');
-      } else {
-        this.showError('Unable to communicate with the page. Please refresh the LinkedIn job page and try again.');
-      }
-      console.error('LinkedIn Job Analyzer: Data extraction error', error);
+      console.error('[LinkedIn Job Analyzer] Data extraction error:', error);
+      this.showError('Unable to communicate with the page. Please refresh the LinkedIn job page and try again.');
     }
   }
 
@@ -375,24 +409,33 @@ class PopupController {
 
   getPredefinedPrompt() {
     const selectedSections = this.getSelectedSections();
+    const hasCompanyReviews = this.hasCompanyReviewsSelected();
     
     if (selectedSections.length === 0) {
       return this.getDefaultPrompt();
     }
     
     if (this.currentLanguage === 'it') {
+      const webSearchInstructions = hasCompanyReviews 
+        ? `\n- Se sono incluse le "Recensioni Azienda", utilizza la ricerca web per trovare recensioni recenti dei dipendenti dell'azienda menzionata nella descrizione del lavoro su piattaforme come Glassdoor, Indeed e altri siti di recensioni. Cerca informazioni su soddisfazione dei dipendenti, equilibrio vita-lavoro, qualità del management e cultura aziendale.`
+        : '';
+
       return `Analizza la seguente offerta di lavoro e restituisci un oggetto JSON con i campi richiesti.
 
 Campi da includere basati sulle sezioni selezionate:
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
 Regole per la risposta:
-- Usa SOLO JSON valido con la struttura: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Usa SOLO JSON valido con la struttura completa includenedo i nuovi campi: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string", "companyReviews": "string", "workLifeBalance": "string", "managementQuality": "string", "companyCultureReviews": "string"}
 - Per i campi non richiesti o non disponibili, usa "Non specificato"
 - Rispondi in italiano, ma mantieni in inglese i termini tecnici comuni
 - Per lo stipendio, includi eventuali fasce, benefit o dettagli sui compensi
-- Per la location, specifica opzioni remote/hybrid/in sede se menzionate`;
+- Per la location, specifica opzioni remote/hybrid/in sede se menzionate${webSearchInstructions}`;
     }
+    
+    const webSearchInstructions = hasCompanyReviews 
+      ? `\n- If "Company Reviews" are included, use web search to find recent employee reviews of the company mentioned in the job posting from platforms like Glassdoor, Indeed, and other review sites. Look for information about employee satisfaction, work-life balance, management quality, and company culture.`
+      : '';
     
     return `Please analyze the following job posting and return a JSON object with the requested fields.
 
@@ -400,10 +443,10 @@ Fields to include based on selected sections:
 ${selectedSections.map(section => `• ${section}`).join('\n')}
 
 Response rules:
-- Use ONLY valid JSON with structure: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string"}
+- Use ONLY valid JSON with complete structure including new fields: {"jobTitle": "string", "company": "string", "salary": "string", "location": "string", "benefits": "string", "requiredSkills": "string", "teamCulture": "string", "companyReviews": "string", "workLifeBalance": "string", "managementQuality": "string", "companyCultureReviews": "string"}
 - For fields not requested or not available, use "Not specified"
 - For salary, include any mentioned ranges, benefits, or compensation details
-- For location, specify remote/hybrid/on-site options if mentioned`;
+- For location, specify remote/hybrid/on-site options if mentioned${webSearchInstructions}`;
   }
 
   getSelectedSections() {
@@ -418,14 +461,16 @@ Response rules:
           2: 'Luogo di Lavoro e Remote Working',
           3: 'Benefit e Vantaggi',
           4: 'Competenze ed Esperienza Richieste',
-          5: 'Team e Cultura Aziendale'
+          5: 'Team e Cultura Aziendale',
+          6: 'Recensioni Azienda (Ricerca Web)'
         } : {
           0: 'Job Title & Company',
           1: 'Salary & Compensation',
           2: 'Work Location & Remote Options', 
           3: 'Benefits & Perks',
           4: 'Required Skills & Experience',
-          5: 'Team & Company Culture'
+          5: 'Team & Company Culture',
+          6: 'Company Reviews (Web Search)'
         };
         sections.push(sectionMap[index]);
       }
@@ -446,7 +491,8 @@ Response rules:
           2: ['location'],
           3: ['benefits'],
           4: ['requiredSkills'],
-          5: ['teamCulture']
+          5: ['teamCulture'],
+          6: ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
         };
         selectedFields.push(...fieldMap[index]);
       }
@@ -454,6 +500,11 @@ Response rules:
     
     // Return null if no specific fields selected (use all fields)
     return selectedFields.length > 0 ? selectedFields : null;
+  }
+
+  hasCompanyReviewsSelected() {
+    const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
+    return checkboxes[6] && checkboxes[6].checked;
   }
 
   getDefaultPrompt() {
@@ -514,6 +565,7 @@ ${jobText}`;
     const selectedFields = this.getSelectedFieldNames();
     const isCustomFormat = this.selectedFormat === 'custom';
     const customPrompt = isCustomFormat ? document.getElementById('custom-prompt').value.trim() : '';
+    const hasCompanyReviews = this.hasCompanyReviewsSelected();
 
     console.log('[LinkedIn Job Analyzer] Sending message to background script...');
     const response = await chrome.runtime.sendMessage({
@@ -522,7 +574,8 @@ ${jobText}`;
       selectedFields: selectedFields,
       language: this.currentLanguage,
       isCustomFormat: isCustomFormat,
-      customPrompt: customPrompt
+      customPrompt: customPrompt,
+      hasCompanyReviews: hasCompanyReviews
     });
 
     console.log('[LinkedIn Job Analyzer] Background script response:', response);
@@ -629,7 +682,11 @@ ${jobText}`;
       location: 'Luogo di Lavoro',
       benefits: 'Benefit',
       requiredSkills: 'Competenze Richieste',
-      teamCulture: 'Team e Cultura'
+      teamCulture: 'Team e Cultura',
+      companyReviews: 'Recensioni Azienda',
+      workLifeBalance: 'Equilibrio Vita-Lavoro',
+      managementQuality: 'Qualità Management',
+      companyCultureReviews: 'Cultura Aziendale (Recensioni)'
     } : {
       jobTitle: 'Job Title',
       company: 'Company',
@@ -637,7 +694,11 @@ ${jobText}`;
       location: 'Location',
       benefits: 'Benefits',
       requiredSkills: 'Required Skills',
-      teamCulture: 'Team Culture'
+      teamCulture: 'Team Culture',
+      companyReviews: 'Company Reviews',
+      workLifeBalance: 'Work-Life Balance',
+      managementQuality: 'Management Quality',
+      companyCultureReviews: 'Company Culture (Reviews)'
     };
 
     const notSpecifiedValue = this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified';
@@ -653,8 +714,14 @@ ${jobText}`;
         return '';
       }
       
-      return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
-                <span style="font-weight: 600; color: #333;">${label}:</span>
+      // Special styling for company review fields
+      const isReviewField = ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'].includes(field);
+      const borderColor = isReviewField ? '#28a745' : '#0077b5';
+      const backgroundColor = isReviewField ? '#f8fff9' : '#f8f9fa';
+      const icon = isReviewField ? '🔍 ' : '';
+      
+      return `<div style="margin: 8px 0; padding: 8px; background: ${backgroundColor}; border-left: 3px solid ${borderColor}; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: 600; color: #333;">${icon}${label}:</span>
                 <span style="margin-left: 8px; color: #555;">${value}</span>
               </div>`;
     }).filter(html => html.length > 0).join('');
@@ -667,14 +734,16 @@ ${jobText}`;
       'Luogo di Lavoro e Remote Working': ['location'],
       'Benefit e Vantaggi': ['benefits'],
       'Competenze ed Esperienza Richieste': ['requiredSkills'],
-      'Team e Cultura Aziendale': ['teamCulture']
+      'Team e Cultura Aziendale': ['teamCulture'],
+      'Recensioni Azienda (Ricerca Web)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
     } : {
       'Job Title & Company': ['jobTitle', 'company'],
       'Salary & Compensation': ['salary'],
       'Work Location & Remote Options': ['location'],
       'Benefits & Perks': ['benefits'],
       'Required Skills & Experience': ['requiredSkills'],
-      'Team & Company Culture': ['teamCulture']
+      'Team & Company Culture': ['teamCulture'],
+      'Company Reviews (Web Search)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
     };
     
     const fields = [];

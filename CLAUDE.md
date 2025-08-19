@@ -25,12 +25,13 @@ Before ending your coding turn:
 
 - Run unit tests and ensure they pass
 - **Maintain documentation up-to-date and lean** - No hard-to-maintain info (like line numbers). No duplication between CLAUDE.md and README.md
-- **Use @code-refactoring-expert agent to eventually refactor the code changed in this turn** before finishing turn and then run tests again. DO NOT refactor code that was not changed in this turn, unless explicitly requested.
 - At the end, **always commit your changes** with a concise message - Informative but max 10 lines (title + summary)
 
 ## Project Overview
 
 A Chrome extension using AI to generate structured summaries of LinkedIn job postings. See [README.md](./README.md) for complete documentation.
+
+This is a personal project that does not have high expectations (so security, auditing, or other enterprise features are not necessary)
 
 ## Quick Start
 

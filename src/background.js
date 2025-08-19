@@ -113,6 +113,34 @@ class SchemaManager {
           en: "Team culture, company values, work environment, or 'Not specified'",
           it: "Cultura del team, valori aziendali e ambiente di lavoro TRADOTTI IN ITALIANO, o 'Non specificato'"
         }
+      },
+      companyReviews: {
+        type: "string",
+        description: {
+          en: "Overall employee satisfaction summary from recent web search of review platforms like Glassdoor, Indeed, and similar sites, or 'Not specified'",
+          it: "Riassunto generale della soddisfazione dei dipendenti da ricerca web recente su piattaforme di recensioni come Glassdoor, Indeed e simili, o 'Non specificato'"
+        }
+      },
+      workLifeBalance: {
+        type: "string",
+        description: {
+          en: "Work-life balance insights from recent employee reviews found through web search, or 'Not specified'",
+          it: "Informazioni sull'equilibrio vita-lavoro da recensioni recenti dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
+      },
+      managementQuality: {
+        type: "string",
+        description: {
+          en: "Management and leadership feedback from employee review platforms found through web search, or 'Not specified'",
+          it: "Feedback su management e leadership da piattaforme di recensioni dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
+      },
+      companyCultureReviews: {
+        type: "string",
+        description: {
+          en: "Company culture observations from latest employee reviews found through web search, or 'Not specified'",
+          it: "Osservazioni sulla cultura aziendale dalle ultime recensioni dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
+        }
       }
     };
     
@@ -255,7 +283,7 @@ class AIServiceManager {
     });
   }
 
-  async generateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
+  async generateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '', hasCompanyReviews = false) {
     console.log('[LinkedIn Job Analyzer] Starting summary generation...');
     
     // Ensure initialization is complete before proceeding
@@ -278,24 +306,104 @@ class AIServiceManager {
 
     console.log('[LinkedIn Job Analyzer] API key validation passed');
 
-    return await this.callOpenAI(prompt, selectedFields, language, isCustomFormat, customPrompt);
+    return await this.callOpenAI(prompt, selectedFields, language, isCustomFormat, customPrompt, hasCompanyReviews);
   }
 
-  async callOpenAI(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
+  async callOpenAI(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '', hasCompanyReviews = false) {
     console.log('[LinkedIn Job Analyzer] Making OpenAI API call with structured outputs...');
     
     // Generate dynamic schema based on selected fields and format type
     const schema = this.schemaManager.generateJobSchema(selectedFields, language, isCustomFormat, customPrompt);
     const notSpecifiedValue = this.schemaManager.getDefaultNotSpecifiedValue(language);
     
-    const systemMessage = isCustomFormat 
+    // Enhanced system message for company reviews with web search
+    const baseSystemMessage = isCustomFormat 
       ? (language === 'it' 
           ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare o immaginare informazioni. L'utente ha richiesto informazioni specifiche che sono state mappate nei campi dello schema JSON. Usa SOLO i dati reali forniti. Se le informazioni non sono disponibili nei dati forniti, usa SEMPRE "${notSpecifiedValue}". NON creare contenuti falsi o di fantasia. DEVI SEMPRE RISPONDERE IN ITALIANO: traduci in italiano tutti i contenuti estratti (descrizioni, benefit, requisiti, etc.), mantieni in inglese SOLO i termini tecnici specifici come nomi di tecnologie, linguaggi di programmazione, strumenti software.`
           : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent or imagine information. The user has requested specific information that has been mapped to the JSON schema fields. Use ONLY the real data provided. If information is not available in the provided data, ALWAYS use "${notSpecifiedValue}". DO NOT create false or fictional content.`)
       : (language === 'it' 
           ? `Sei un assistente professionale per l'analisi di offerte di lavoro. IMPORTANTE: Estrai SOLO le informazioni realmente presenti nei dati del lavoro forniti. NON inventare informazioni. Devi rispondere con JSON strutturato che segue esattamente lo schema fornito. Se le informazioni non sono disponibili nei dati forniti, usa "${notSpecifiedValue}" per quel campo. DEVI SEMPRE RISPONDERE IN ITALIANO: traduci in italiano tutti i contenuti estratti (descrizioni, benefit, requisiti, etc.), mantieni in inglese SOLO i termini tecnici specifici come nomi di tecnologie, linguaggi di programmazione, strumenti software.`
           : `You are a professional job analysis assistant. IMPORTANT: Extract ONLY information that is actually present in the provided job data. DO NOT invent information. You must respond with structured JSON that follows the provided schema exactly. If information is not available in the provided data, use "${notSpecifiedValue}" for that field.`);
+
+    const webSearchInstructions = hasCompanyReviews 
+      ? (language === 'it' 
+          ? ` INOLTRE: Se richiesto, utilizza la ricerca web per trovare recensioni recenti dei dipendenti dell'azienda su piattaforme come Glassdoor, Indeed e altri siti di recensioni aziendali. Cerca informazioni su soddisfazione dei dipendenti, equilibrio vita-lavoro, qualità del management e cultura aziendale.`
+          : ` ADDITIONALLY: When requested, use web search to find recent employee reviews of the company from platforms like Glassdoor, Indeed, and other company review sites. Look for information about employee satisfaction, work-life balance, management quality, and company culture.`)
+      : '';
+
+    const systemMessage = baseSystemMessage + webSearchInstructions;
     
+    // Use Responses API with web search tool when company reviews are requested
+    if (hasCompanyReviews) {
+      console.log('[LinkedIn Job Analyzer] Using Responses API with web search tool');
+      
+      const requestBody = {
+        model: 'gpt-4.1-mini',
+        input: prompt,
+        tools: [{
+          type: "web_search_preview",
+          search_context_size: "medium"
+        }],
+        max_tokens: 1000,
+        temperature: 0.3,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "job_analysis",
+            strict: true,
+            schema: schema
+          }
+        }
+      };
+
+      try {
+        const response = await fetch('https://api.openai.com/v1/responses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('[LinkedIn Job Analyzer] Responses API Response status:', response.status, response.statusText);
+
+        if (!response.ok) {
+          console.log('[LinkedIn Job Analyzer] Responses API failed, falling back to Chat Completions');
+          // Fall back to regular Chat Completions API
+          return await this.callChatCompletionsAPI(prompt, systemMessage, schema);
+        }
+
+        const data = await response.json();
+        console.log('[LinkedIn Job Analyzer] Responses API data received');
+        
+        if (data.output_text) {
+          // Try to parse as JSON from the structured output
+          try {
+            const parsedData = JSON.parse(data.output_text);
+            console.log('[LinkedIn Job Analyzer] Structured data received with web search:', Object.keys(parsedData));
+            return parsedData;
+          } catch (parseError) {
+            console.error('[LinkedIn Job Analyzer] Failed to parse Responses API JSON output:', parseError);
+            throw new Error('Invalid JSON response from Responses API');
+          }
+        } else {
+          throw new Error('No output_text in Responses API response');
+        }
+        
+      } catch (error) {
+        console.error('[LinkedIn Job Analyzer] Responses API error:', error);
+        console.log('[LinkedIn Job Analyzer] Falling back to Chat Completions API');
+        // Fall back to regular Chat Completions API
+        return await this.callChatCompletionsAPI(prompt, systemMessage, schema);
+      }
+    } else {
+      // Use regular Chat Completions API
+      return await this.callChatCompletionsAPI(prompt, systemMessage, schema);
+    }
+  }
+
+  async callChatCompletionsAPI(prompt, systemMessage, schema) {
     const requestBody = {
       model: 'gpt-4.1-mini',
       messages: [
@@ -320,7 +428,7 @@ class AIServiceManager {
       }
     };
 
-    console.log('[LinkedIn Job Analyzer] OpenAI Request body:', {
+    console.log('[LinkedIn Job Analyzer] Chat Completions Request body:', {
       model: requestBody.model,
       messageCount: requestBody.messages.length,
       promptLength: prompt.length
@@ -336,7 +444,7 @@ class AIServiceManager {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('[LinkedIn Job Analyzer] OpenAI Response status:', response.status, response.statusText);
+      console.log('[LinkedIn Job Analyzer] Chat Completions Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         let errorDetails;
@@ -352,7 +460,7 @@ class AIServiceManager {
       }
 
       const data = await response.json();
-      console.log('[LinkedIn Job Analyzer] OpenAI Response received, choice count:', data.choices?.length || 0);
+      console.log('[LinkedIn Job Analyzer] Chat Completions Response received, choice count:', data.choices?.length || 0);
       
       if (!data.choices || data.choices.length === 0) {
         console.error('[LinkedIn Job Analyzer] No choices in OpenAI response:', data);
@@ -410,7 +518,7 @@ const aiService = new AIServiceManager();
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.action === 'generateSummary') {
-      handleGenerateSummary(request.prompt, request.selectedFields, request.language, request.isCustomFormat, request.customPrompt)
+      handleGenerateSummary(request.prompt, request.selectedFields, request.language, request.isCustomFormat, request.customPrompt, request.hasCompanyReviews)
         .then(summary => {
           console.log('[LinkedIn Job Analyzer] Summary generated successfully');
           sendResponse({ success: true, summary });
@@ -440,10 +548,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-async function handleGenerateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '') {
+async function handleGenerateSummary(prompt, selectedFields = null, language = 'en', isCustomFormat = false, customPrompt = '', hasCompanyReviews = false) {
   try {
     console.log('[LinkedIn Job Analyzer] Attempting to generate summary...');
-    const summary = await aiService.generateSummary(prompt, selectedFields, language, isCustomFormat, customPrompt);
+    const summary = await aiService.generateSummary(prompt, selectedFields, language, isCustomFormat, customPrompt, hasCompanyReviews);
     console.log('[LinkedIn Job Analyzer] ✅ Real AI summary generated successfully');
     return summary;
   } catch (error) {

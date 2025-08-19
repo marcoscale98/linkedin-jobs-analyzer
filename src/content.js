@@ -322,14 +322,28 @@ try {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
+    console.log('[LinkedIn Job Analyzer]: Received message', request);
+    
     if (request.action === 'extractJobData') {
       if (!jobExtractor) {
+        console.log('[LinkedIn Job Analyzer]: Creating new job extractor');
         jobExtractor = new LinkedInJobExtractor();
       }
       
       const jobData = jobExtractor.extractJobData();
       console.log('[LinkedIn Job Analyzer]: Extracted job data', jobData);
-      sendResponse({ jobData: jobData, success: true });
+      
+      if (jobData) {
+        sendResponse({ jobData: jobData, success: true });
+      } else {
+        sendResponse({ 
+          jobData: null, 
+          success: false, 
+          error: 'Unable to extract job data from this page. Please make sure you are on a LinkedIn job posting page.' 
+        });
+      }
+    } else {
+      sendResponse({ success: false, error: 'Unknown action' });
     }
   } catch (error) {
     console.error('[LinkedIn Job Analyzer]: Error processing message', error);
