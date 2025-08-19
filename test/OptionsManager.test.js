@@ -31,7 +31,7 @@ function createOptionsDOM() {
 // Mock OptionsManager class (extracted from options.js)
 class OptionsManager {
   constructor() {
-    this.init();
+    this.init().catch(() => {}); // Catch any initialization errors to prevent unhandled rejections
   }
 
   async init() {
@@ -565,16 +565,16 @@ describe('[LinkedIn Job Analyzer] OptionsManager', () => {
   });
 
   describe('Error Handling and Edge Cases', () => {
-    it('should handle Chrome storage exceptions', async () => {
+    it('should handle Chrome storage exceptions during loadSettings', async () => {
       chrome.storage.sync.get.mockRejectedValue(new Error('Storage unavailable'));
       
       const newOptionsManager = new OptionsManager();
       
-      // Should not throw error during initialization - catch the promise rejection
+      // Test that loadSettings properly handles the rejection
       try {
-        await newOptionsManager.init();
+        await newOptionsManager.loadSettings();
+        expect.fail('Expected storage error to be thrown');
       } catch (error) {
-        // Expected to catch the storage error
         expect(error.message).toBe('Storage unavailable');
       }
     });
