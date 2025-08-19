@@ -1,7 +1,7 @@
 // === Console Bridge for Development ===
 /**
  * Simple Console Bridge - Stream LinkedIn Job Analyzer logs to terminal
- * Based on the EV Travel Visual Comparator console bridge
+ * Service Worker compatible version
  */
 
 (function() {
@@ -27,7 +27,7 @@
             level,
             message,
             timestamp: Date.now(),
-            url: window.location.href
+            source: 'service_worker'
         };
         
         // Send to terminal server
