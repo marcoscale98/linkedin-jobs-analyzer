@@ -122,6 +122,10 @@ class PopupController {
     await this.loadLanguagePreference();
     this.setupEventListeners();
     this.updateLanguageUI();
+    
+    // Select predefined format by default
+    this.selectFormat('predefined');
+    
     this.checkCurrentTab();
   }
 
