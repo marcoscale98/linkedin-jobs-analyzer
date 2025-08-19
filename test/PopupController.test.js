@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { chrome } from './setup.js';
-import '@testing-library/jest-dom';
 
 // Create DOM helper function
 function createDOM() {

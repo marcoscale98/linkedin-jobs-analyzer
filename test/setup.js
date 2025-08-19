@@ -1,5 +1,4 @@
 import { beforeEach, vi } from 'vitest';
-import '@testing-library/jest-dom';
 
 // Create Chrome API mocks using Vitest
 const createChromeAPIStub = () => ({

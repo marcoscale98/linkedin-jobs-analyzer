@@ -5,14 +5,14 @@ Stream LinkedIn Job Analyzer console logs to your terminal for development.
 ## Quick Start
 
 1. **Add console bridge to extension:**
-   ```bash
-   npm run add-bridge
-   ```
+```bash
+npm run add-bridge
+```
 
 2. **Start log server:**
-   ```bash
-   npm run logs
-   ```
+```bash
+npm run logs
+```
 
 3. **Reload your Chrome extension** and use it normally
 
