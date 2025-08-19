@@ -18,6 +18,7 @@
 
 - **All logs MUST start with '[LinkedIn Job Analyzer]'**
 - **Write documentation and code in English**
+- If you add, modify or delete source code, adjust related unit tests accordingly 
 
 ## Before ending your coding turn (istructions for only the Orchestrator - NO Sub-Agents)
 
