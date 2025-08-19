@@ -4,15 +4,17 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 
 ## Features
 
-- **Predefined Format**: Get standardized summaries with customizable sections (job title, company, salary, location, benefits, skills, culture)
+- **Predefined Format**: Get standardized summaries with customizable sections (job title, company, salary, location, benefits, skills, culture, company reviews)
+- **Company Reviews with Web Search**: Real-time employee review analysis from Glassdoor, Indeed, and other platforms using OpenAI's web search tool
 - **Flexible Custom Format**: Request any number of fields using natural language with infinite flexibility
   - Single field: `"salary"`
   - Multiple fields: `"titolo lavoro, azienda, gruppo aziendale, orario lavorativo"`
   - Bullet format: `"- team size\n- remote policy\n- required skills"`
   - Mixed delimiters: Support for commas, newlines, dashes, and bullets (-, •, ·, *)
 - **OpenAI Structured Outputs**: 100% JSON reliability using GPT-4.1 mini with dynamic schema generation
+- **Dual API Integration**: Responses API with web search + Chat Completions API fallback for maximum reliability
 - **Multilingual Support**: English and Italian interfaces with intelligent technical term preservation
-- **LinkedIn Integration**: Works seamlessly with LinkedIn job posting pages
+- **LinkedIn Integration**: Works seamlessly with LinkedIn job posting pages with robust content script injection
 - **Smart Field Mapping**: Converts user field names to valid identifiers and back for display
 
 ## Installation
@@ -35,7 +37,7 @@ A Chrome extension that uses AI to generate structured summaries of LinkedIn job
 1. Navigate to any LinkedIn job posting (`linkedin.com/jobs/view/...`)
 2. Click the extension icon in your browser toolbar
 3. Choose your summary format:
-   - **Predefined Format**: Select specific sections from checkboxes (title, company, salary, location, benefits, skills, culture)
+   - **Predefined Format**: Select specific sections from checkboxes (title, company, salary, location, benefits, skills, culture, company reviews)
    - **Custom Format**: Enter any fields you want in natural language
 4. Click "Generate Summary" to get an AI-powered analysis
 
@@ -74,13 +76,16 @@ Job Title
 ## Example Output
 
 ### Predefined Format
-Selected sections (Title, Company, Salary, Location, Benefits):
+Selected sections (Title, Company, Salary, Location, Benefits, Company Reviews):
 ```
 Titolo Lavoro: Senior Software Engineer
 Azienda: Tech Corp
 Stipendio: €80.000 - €120.000
 Luogo di Lavoro: Remoto / Milano, IT
 Benefit: Assicurazione sanitaria, buoni pasto, ferie flessibili
+🔍 Recensioni Azienda: Rating 4.2/5 su Glassdoor, dipendenti apprezzano l'ambiente innovativo
+🔍 Equilibrio Vita-Lavoro: Orari flessibili e smart working ben valutati dai dipendenti
+🔍 Qualità Management: Leadership supportiva secondo le recensioni recenti
 ```
 
 ### Custom Format Examples
@@ -153,9 +158,11 @@ npm run test:ui        # Interactive test UI
 - **Manifest Version**: 3
 - **Permissions**: activeTab, scripting, storage
 - **AI Service**: OpenAI GPT-4.1 mini with structured outputs (`json_schema` + `strict: true`)
+- **Web Search Integration**: OpenAI Responses API with `web_search_preview` tool for real-time company reviews
+- **API Fallback**: Dual API support - Responses API with web search + Chat Completions API fallback
 - **Schema Generation**: Dynamic JSON schema creation based on user input via SchemaManager class
 - **Field Processing**: Automatic parsing of multiple delimiters and camelCase conversion
-- **Content Extraction**: Multiple selector strategies for robust LinkedIn data extraction
+- **Content Extraction**: Multiple selector strategies with automatic script injection for robust LinkedIn data extraction
 - **Storage**: Chrome storage API for secure API key management
 - **JSON Reliability**: 100% valid JSON output (vs ~35% with basic JSON mode)
 - **Multilingual**: Full English/Italian support with technical term preservation
@@ -165,35 +172,49 @@ npm run test:ui        # Interactive test UI
 
 ### SchemaManager Class
 - **Dynamic Schema Generation**: Creates OpenAI JSON schemas on-the-fly based on user input
+- **Company Review Fields**: Supports 4 new web-search enabled fields (companyReviews, workLifeBalance, managementQuality, companyCultureReviews)
 - **Field Parsing**: Splits user prompts by multiple delimiters (`,`, `\n`, `-`, `•`, `·`, `*`)
 - **Identifier Conversion**: Transforms "titolo lavoro" → `titoloLavoro` for JSON compliance
 - **Schema Caching**: Optimizes performance by caching generated schemas
-- **Multilingual Descriptions**: Provides field descriptions in user's selected language
+- **Multilingual Descriptions**: Provides field descriptions in user's selected language with web search instructions
 
-### Structured Outputs vs Basic JSON
-- **Before**: ~35% JSON reliability with `{"type": "json_object"}`
-- **After**: 100% JSON reliability with `{"type": "json_schema", "strict": true}`
+### Dual API Architecture
+- **Responses API**: Primary API for web search functionality using `web_search_preview` tool
+- **Web Search Context**: Configurable search context size (`medium` for balanced performance/quality)
+- **Chat Completions Fallback**: Automatic fallback when Responses API unavailable
+- **Structured Outputs**: 100% JSON reliability with `{"type": "json_schema", "strict": true}` vs ~35% with basic JSON
 - **Schema Compliance**: Enforces `additionalProperties: false` for OpenAI compatibility
 - **Error Prevention**: System prompts prevent AI hallucination and fictional content
+
+### Content Script Integration
+- **Automatic Injection**: Dynamic content script injection when not available
+- **Connection Recovery**: Graceful handling of "Could not establish connection" errors
+- **Multi-Strategy Extraction**: Multiple selector strategies for robust LinkedIn data extraction
+- **Error Resilience**: Comprehensive error handling with informative user feedback
 
 ### Testing Framework
 - **Vitest**: Modern JavaScript testing framework (2-5x faster than Jest)
 - **Native Vitest mocks**: Chrome extension API mocking for isolated unit tests
 - **JSDOM**: DOM environment simulation for browser-based testing
-- **Coverage**: Comprehensive test coverage across all major components
+- **Coverage**: Comprehensive test coverage across all major components including new Company Reviews feature
 - **Mocking Strategy**: Chrome APIs, fetch requests, and DOM manipulation properly mocked
 
 ## Privacy & Security
 
 - API keys are stored locally using Chrome's storage API
-- No data is sent to third parties except OpenAI for AI processing
-- Job posting content is only processed temporarily for summary generation
+- No data is sent to third parties except OpenAI for AI processing and web search
+- Job posting content and company names are only processed temporarily for summary generation
+- Web search queries are sent to OpenAI's search service for company review analysis
 - All communication uses HTTPS
+- No personal user data is collected or stored
 
 ## Troubleshooting
 
 - **Extension not working**: Ensure you're on a LinkedIn job posting page (`linkedin.com/jobs/view/...`)
+- **Content script connection errors**: The extension now automatically injects the content script if needed
 - **No summary generated**: Check that your OpenAI API key is configured correctly in Options
+- **Company reviews not showing**: Ensure the "Company Reviews" checkbox is selected and your API key supports the Responses API
+- **Web search not working**: The extension automatically falls back to Chat Completions API if Responses API fails
 - **Extraction issues**: Try refreshing the LinkedIn page and ensure it's fully loaded
 - **Custom fields not working**: Verify your field names can be converted to valid identifiers
 - **Schema errors**: Ensure your custom format doesn't exceed OpenAI token limits
@@ -214,12 +235,14 @@ To contribute or modify:
 ## Known Limitations
 
 - Requires manual OpenAI API key setup (no built-in AI service)
+- Company review data freshness depends on OpenAI's web search capabilities
 - LinkedIn layout changes may require selector updates
-- Rate limits depend on OpenAI API usage and billing
+- Rate limits depend on OpenAI API usage and billing (web search incurs additional costs)
 - Mock responses used when API unavailable (maintain same schema structure)
 - First-time usage requires proper API key initialization
 - Custom field names must be convertible to valid camelCase identifiers
 - Maximum practical limit depends on OpenAI token limits for schema size
+- Web search feature requires Responses API access (automatically falls back if unavailable)
 
 ## License
 
