@@ -12,8 +12,8 @@
     "remove-bridge": "./dev-tools/add-console-bridge.sh remove"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.9",
-    "vitest": "^2.1.9"
+    "@vitest/coverage-v8": "^3.2.4",
+    "vitest": "^3.2.4"
   },
   "keywords": [
     "chrome-extension",
