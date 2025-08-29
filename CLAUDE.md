@@ -12,6 +12,7 @@
 
 - **ALWAYS Use WebFetch, WebSearch, and MCP tools when**:
   - You are dealing with libraries, APIs, or external resources
+  - For OpenAI documentation, I have fetched for you the most relevant pages and put them in the `openai-doc` folder
 - **During planning, consider potential breaking changes** that could affect existing functionality
 
 ## During coding
