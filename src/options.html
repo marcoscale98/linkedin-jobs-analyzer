@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>LinkedIn Job Analyzer - Settings</title>
+  <link rel="stylesheet" href="shared-styles.css">
   <style>
     body {
       width: 600px;
@@ -51,7 +52,7 @@
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      font-size: 14px;
+      font-size: calc(14px * var(--font-scale));
     }
     
     .form-group input[type="password"] {
@@ -65,7 +66,7 @@
       padding: 12px 24px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: calc(14px * var(--font-scale));
     }
     
     .save-btn:hover {
@@ -96,12 +97,85 @@
       padding: 15px;
       border-radius: 4px;
       margin-top: 10px;
-      font-size: 13px;
+      font-size: calc(13px * var(--font-scale));
       color: #666;
     }
     
     .api-info a {
       color: #0077b5;
+    }
+
+    /* Font scaling controls */
+    .font-scale-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-top: 5px;
+    }
+
+    #font-scale-slider {
+      flex: 1;
+      height: 6px;
+      background: #ddd;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    #font-scale-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #0077b5;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #font-scale-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #0077b5;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
+    .font-scale-display {
+      min-width: 40px;
+      text-align: center;
+      font-weight: bold;
+      color: #0077b5;
+    }
+
+    .scale-btn {
+      background-color: #f8f9fa;
+      color: #666;
+      border: 1px solid #ddd;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: calc(12px * var(--font-scale));
+      transition: background-color 0.2s;
+    }
+
+    .scale-btn:hover {
+      background-color: #e9ecef;
+    }
+
+    .font-scale-preview {
+      margin-top: 15px;
+      padding: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }
+
+    .preview-text {
+      margin: 0;
+      font-size: calc(14px * var(--font-scale));
+      color: #333;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -120,6 +194,22 @@
         <option value="en">English</option>
         <option value="it">Italiano</option>
       </select>
+    </div>
+
+    <div class="form-group">
+      <label for="font-scale-slider">Font Size:</label>
+      <div class="font-scale-container">
+        <input type="range" id="font-scale-slider" min="50" max="200" value="100" step="10">
+        <div class="font-scale-display">
+          <span id="font-scale-value">100</span>%
+        </div>
+        <div class="font-scale-buttons">
+          <button type="button" id="font-scale-reset" class="scale-btn">Reset</button>
+        </div>
+      </div>
+      <div class="font-scale-preview">
+        <p class="preview-text">Preview: This is how text will look at the selected size</p>
+      </div>
     </div>
   </div>
   
@@ -150,6 +240,7 @@
     </ol>
   </div>
   
+  <script src="font-scaler.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

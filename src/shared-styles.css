@@ -1,0 +1,21 @@
+/* LinkedIn Job Analyzer - Shared Font Scaling System */
+:root {
+  --font-scale: 1; /* Default 100% scaling */
+}
+
+/* Base font size calculations using CSS calc() */
+.font-xs { font-size: calc(10px * var(--font-scale)); }
+.font-sm { font-size: calc(12px * var(--font-scale)); }
+.font-base { font-size: calc(14px * var(--font-scale)); }
+.font-lg { font-size: calc(16px * var(--font-scale)); }
+.font-xl { font-size: calc(18px * var(--font-scale)); }
+
+/* Utility for applying font scaling to any element */
+.scalable-font {
+  font-size: calc(1em * var(--font-scale));
+}
+
+/* Override for elements that should maintain their relative size */
+.no-font-scale {
+  font-size: inherit !important;
+}

@@ -18,6 +18,18 @@ class OptionsManager {
     if (result.language) {
       document.getElementById('language-select').value = result.language;
     }
+
+    // Load font scale settings
+    await this.loadFontScaleSettings();
+  }
+
+  async loadFontScaleSettings() {
+    const currentScale = await FontScaler.getCurrentScale();
+    const slider = document.getElementById('font-scale-slider');
+    const display = document.getElementById('font-scale-value');
+    
+    slider.value = currentScale;
+    display.textContent = currentScale;
   }
 
   setupEventListeners() {
@@ -39,6 +51,48 @@ class OptionsManager {
 
     // Set OpenAI placeholder
     apiKeyInput.placeholder = 'sk-...';
+
+    // Font scaling event listeners
+    this.setupFontScaleListeners();
+  }
+
+  setupFontScaleListeners() {
+    const slider = document.getElementById('font-scale-slider');
+    const display = document.getElementById('font-scale-value');
+    const resetBtn = document.getElementById('font-scale-reset');
+
+    // Update display and apply scale as slider moves
+    slider.addEventListener('input', async (e) => {
+      const scale = parseInt(e.target.value);
+      display.textContent = scale;
+      
+      // Apply scale immediately for live preview
+      FontScaler.applyScale(scale);
+    });
+
+    // Save scale when user releases slider
+    slider.addEventListener('change', async (e) => {
+      const scale = parseInt(e.target.value);
+      try {
+        await FontScaler.applyToAllExtensionPages(scale);
+        this.showMessage(`Font size set to ${scale}%`, 'success');
+      } catch (error) {
+        this.showMessage('Error saving font size: ' + error.message, 'error');
+      }
+    });
+
+    // Reset button
+    resetBtn.addEventListener('click', async () => {
+      try {
+        const defaultScale = await FontScaler.resetScale();
+        slider.value = defaultScale;
+        display.textContent = defaultScale;
+        await FontScaler.applyToAllExtensionPages(defaultScale);
+        this.showMessage('Font size reset to default', 'success');
+      } catch (error) {
+        this.showMessage('Error resetting font size: ' + error.message, 'error');
+      }
+    });
   }
 
 
