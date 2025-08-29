@@ -19,3 +19,56 @@
 .no-font-scale {
   font-size: inherit !important;
 }
+
+/* Job Summary Content Styles - Scalable */
+.summary-field {
+  margin: calc(8px * var(--font-scale)) 0;
+  padding: calc(8px * var(--font-scale));
+  background: #f8f9fa;
+  border-left: 3px solid #0077b5;
+  border-radius: 0 4px 4px 0;
+}
+
+.summary-field.review-field {
+  background: #f8fff9;
+  border-left-color: #28a745;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #333;
+  font-size: calc(14px * var(--font-scale));
+}
+
+.summary-value {
+  margin-left: calc(8px * var(--font-scale));
+  color: #555;
+  font-size: calc(14px * var(--font-scale));
+}
+
+.summary-spacer {
+  margin: calc(8px * var(--font-scale)) 0;
+}
+
+.summary-section-header {
+  margin: calc(12px * var(--font-scale)) 0 calc(6px * var(--font-scale)) 0;
+  font-weight: bold;
+  color: #0077b5;
+  border-bottom: 1px solid #e3f2fd;
+  padding-bottom: calc(4px * var(--font-scale));
+  font-size: calc(14px * var(--font-scale));
+}
+
+.summary-text {
+  margin: calc(6px * var(--font-scale)) 0;
+  color: #555;
+  line-height: 1.4;
+  font-size: calc(14px * var(--font-scale));
+}
+
+.summary-bullet {
+  margin: calc(6px * var(--font-scale)) 0;
+  padding: calc(6px * var(--font-scale));
+  color: #666;
+  font-size: calc(14px * var(--font-scale));
+}

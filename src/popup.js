@@ -651,9 +651,9 @@ ${jobText}`;
         return '';
       }
       
-      return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
-                <span style="font-weight: 600; color: #333;">${displayField}:</span>
-                <span style="margin-left: 8px; color: #555;">${displayValue}</span>
+      return `<div class="summary-field">
+                <span class="summary-label">${displayField}:</span>
+                <span class="summary-value">${displayValue}</span>
               </div>`;
     }).filter(html => html.length > 0).join('');
   }
@@ -720,13 +720,12 @@ ${jobText}`;
       
       // Special styling for company review fields
       const isReviewField = ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'].includes(field);
-      const borderColor = isReviewField ? '#28a745' : '#0077b5';
-      const backgroundColor = isReviewField ? '#f8fff9' : '#f8f9fa';
+      const fieldClass = isReviewField ? 'summary-field review-field' : 'summary-field';
       const icon = isReviewField ? '🔍 ' : '';
       
-      return `<div style="margin: 8px 0; padding: 8px; background: ${backgroundColor}; border-left: 3px solid ${borderColor}; border-radius: 0 4px 4px 0;">
-                <span style="font-weight: 600; color: #333;">${icon}${label}:</span>
-                <span style="margin-left: 8px; color: #555;">${value}</span>
+      return `<div class="${fieldClass}">
+                <span class="summary-label">${icon}${label}:</span>
+                <span class="summary-value">${value}</span>
               </div>`;
     }).filter(html => html.length > 0).join('');
   }
@@ -765,12 +764,12 @@ ${jobText}`;
       const trimmedLine = line.trim();
       
       if (!trimmedLine) {
-        return '<div style="margin: 8px 0;"></div>';
+        return '<div class="summary-spacer"></div>';
       }
       
       // Section headers (lines ending with colon)
       if (trimmedLine.endsWith(':')) {
-        return `<div style="margin: 12px 0 6px 0; font-weight: bold; color: #0077b5; border-bottom: 1px solid #e3f2fd; padding-bottom: 4px;">${trimmedLine}</div>`;
+        return `<div class="summary-section-header">${trimmedLine}</div>`;
       }
       
       // Bullet points
@@ -780,17 +779,17 @@ ${jobText}`;
         const value = valueParts.join(':').trim();
         
         if (value) {
-          return `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #0077b5; border-radius: 0 4px 4px 0;">
-                    <span style="font-weight: 600; color: #333;">${label.trim()}:</span>
-                    <span style="margin-left: 8px; color: #555;">${value}</span>
+          return `<div class="summary-field">
+                    <span class="summary-label">${label.trim()}:</span>
+                    <span class="summary-value">${value}</span>
                   </div>`;
         } else {
-          return `<div style="margin: 6px 0; padding: 6px; color: #666;">${content}</div>`;
+          return `<div class="summary-bullet">${content}</div>`;
         }
       }
       
       // Regular text
-      return `<div style="margin: 6px 0; color: #555; line-height: 1.4;">${trimmedLine}</div>`;
+      return `<div class="summary-text">${trimmedLine}</div>`;
     }).join('');
   }
 
