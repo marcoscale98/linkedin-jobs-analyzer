@@ -295,6 +295,77 @@
       color: #2e7d32;
       border: 1px solid #c8e6c9;
     }
+
+    /* Summary field styling for different data types */
+    .summary-field {
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .summary-field:last-child {
+      border-bottom: none;
+    }
+
+    .summary-label {
+      font-weight: 600;
+      color: #333;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      color: #555;
+      line-height: 1.4;
+    }
+
+    /* Review field styling */
+    .review-field {
+      background: linear-gradient(135deg, #f3e5f5 0%, #fce4ec 100%);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px solid #e1bee7;
+    }
+
+    .review-field .summary-label {
+      color: #7b1fa2;
+    }
+
+    /* Rating field styling */
+    .rating-field {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px solid #ffcc02;
+    }
+
+    .rating-field .summary-label {
+      color: #f57c00;
+    }
+
+    .rating-field .summary-value {
+      font-weight: 500;
+      color: #e65100;
+    }
+
+    /* Company summary field styling */
+    .company-summary-field {
+      background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px solid #81d4fa;
+    }
+
+    .company-summary-field .summary-label {
+      color: #0277bd;
+    }
+
+    .company-summary-field .summary-value {
+      font-weight: 500;
+      color: #01579b;
+    }
   </style>
 </head>
 <body>
@@ -350,6 +421,12 @@
           <div class="checkbox-group">
             <label class="checkbox-item">
               <input type="checkbox" checked> <span data-text="company_reviews">Company Reviews (Web Search)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked> <span data-text="company_ratings">Star Ratings & Platform Info</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked> <span data-text="company_summary">Company Summary (Size, Industry, Type)</span>
             </label>
           </div>
         </div>

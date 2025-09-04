@@ -81,6 +81,48 @@ class SchemaManager {
           en: "Company culture observations from latest employee reviews found through web search, or 'Not specified'",
           it: "Osservazioni sulla cultura aziendale dalle ultime recensioni dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
         }
+      },
+      platformUsed: {
+        type: "string",
+        description: {
+          en: "Platform used for company reviews (Glassdoor, Indeed, or other), or 'Not specified'",
+          it: "Piattaforma utilizzata per le recensioni azienda (Glassdoor, Indeed, o altra), o 'Non specificato'"
+        }
+      },
+      overallRating: {
+        type: "string",
+        description: {
+          en: "Overall company rating from review platform (e.g., '4.2/5 stars'), or 'Not specified'",
+          it: "Valutazione complessiva dell'azienda dalla piattaforma di recensioni (es. '4.2/5 stelle'), o 'Non specificato'"
+        }
+      },
+      reviewCount: {
+        type: "string",
+        description: {
+          en: "Number of reviews available on the platform (e.g., '1,250 reviews'), or 'Not specified'",
+          it: "Numero di recensioni disponibili sulla piattaforma (es. '1.250 recensioni'), o 'Non specificato'"
+        }
+      },
+      companySize: {
+        type: "string",
+        description: {
+          en: "Company size information (employees count, company scale), or 'Not specified'",
+          it: "Informazioni sulla dimensione dell'azienda (numero dipendenti, scala aziendale), o 'Non specificato'"
+        }
+      },
+      industry: {
+        type: "string",
+        description: {
+          en: "Company industry and sector information, or 'Not specified'",
+          it: "Informazioni su settore e industria dell'azienda, o 'Non specificato'"
+        }
+      },
+      businessType: {
+        type: "string",
+        description: {
+          en: "Type of business: Product company, Consultancy, Service provider, or other classification, or 'Not specified'",
+          it: "Tipo di business: Azienda di prodotto, Consulenza, Fornitore di servizi, o altra classificazione, o 'Non specificato'"
+        }
       }
     };
     
@@ -225,7 +267,7 @@ describe('[LinkedIn Job Analyzer] SchemaManager', () => {
       
       expect(schema.type).toBe('object');
       expect(schema.additionalProperties).toBe(false);
-      expect(Object.keys(schema.properties)).toHaveLength(11);
+      expect(Object.keys(schema.properties)).toHaveLength(17);
       expect(schema.properties.jobTitle).toBeDefined();
       expect(schema.properties.company).toBeDefined();
       expect(schema.properties.salary).toBeDefined();
@@ -233,6 +275,12 @@ describe('[LinkedIn Job Analyzer] SchemaManager', () => {
       expect(schema.properties.workLifeBalance).toBeDefined();
       expect(schema.properties.managementQuality).toBeDefined();
       expect(schema.properties.companyCultureReviews).toBeDefined();
+      expect(schema.properties.platformUsed).toBeDefined();
+      expect(schema.properties.overallRating).toBeDefined();
+      expect(schema.properties.reviewCount).toBeDefined();
+      expect(schema.properties.companySize).toBeDefined();
+      expect(schema.properties.industry).toBeDefined();
+      expect(schema.properties.businessType).toBeDefined();
     });
 
     it('should generate schema for selected fields only', () => {
@@ -476,6 +524,145 @@ describe('[LinkedIn Job Analyzer] SchemaManager', () => {
       expect(schema.properties.companyReviews).toBeDefined();
       expect(schema.properties.workLifeBalance).toBeDefined();
       expect(schema.required).toEqual(mixedFields);
+    });
+  });
+
+  describe('Star Ratings and Platform Fields', () => {
+    it('should include all star rating fields in field definitions', () => {
+      expect(schemaManager.fieldDefinitions.platformUsed).toBeDefined();
+      expect(schemaManager.fieldDefinitions.overallRating).toBeDefined();
+      expect(schemaManager.fieldDefinitions.reviewCount).toBeDefined();
+    });
+
+    it('should generate schema with star rating fields only', () => {
+      const ratingFields = ['platformUsed', 'overallRating', 'reviewCount'];
+      const schema = schemaManager.generateJobSchema(ratingFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(3);
+      expect(schema.properties.platformUsed).toBeDefined();
+      expect(schema.properties.overallRating).toBeDefined();
+      expect(schema.properties.reviewCount).toBeDefined();
+    });
+
+    it('should have platform-specific descriptions for rating fields', () => {
+      const schema = schemaManager.generateJobSchema(['platformUsed'], 'en');
+      const platformDesc = schema.properties.platformUsed.description;
+      
+      expect(platformDesc).toContain('Glassdoor');
+      expect(platformDesc).toContain('Indeed');
+      expect(platformDesc).toContain('Not specified');
+    });
+
+    it('should have star rating description with examples', () => {
+      const schema = schemaManager.generateJobSchema(['overallRating'], 'en');
+      const ratingDesc = schema.properties.overallRating.description;
+      
+      expect(ratingDesc).toContain('4.2/5 stars');
+      expect(ratingDesc).toContain('Not specified');
+    });
+
+    it('should have review count description with examples', () => {
+      const schema = schemaManager.generateJobSchema(['reviewCount'], 'it');
+      const countDesc = schema.properties.reviewCount.description;
+      
+      expect(countDesc).toContain('1.250 recensioni');
+      expect(countDesc).toContain('Non specificato');
+    });
+  });
+
+  describe('Company Summary Fields', () => {
+    it('should include all company summary fields in field definitions', () => {
+      expect(schemaManager.fieldDefinitions.companySize).toBeDefined();
+      expect(schemaManager.fieldDefinitions.industry).toBeDefined();
+      expect(schemaManager.fieldDefinitions.businessType).toBeDefined();
+    });
+
+    it('should generate schema with company summary fields only', () => {
+      const summaryFields = ['companySize', 'industry', 'businessType'];
+      const schema = schemaManager.generateJobSchema(summaryFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(3);
+      expect(schema.properties.companySize).toBeDefined();
+      expect(schema.properties.industry).toBeDefined();
+      expect(schema.properties.businessType).toBeDefined();
+    });
+
+    it('should have appropriate descriptions for company size', () => {
+      const schema = schemaManager.generateJobSchema(['companySize'], 'en');
+      const sizeDesc = schema.properties.companySize.description;
+      
+      expect(sizeDesc).toContain('employees count');
+      expect(sizeDesc).toContain('company scale');
+      expect(sizeDesc).toContain('Not specified');
+    });
+
+    it('should have business type classification options', () => {
+      const schema = schemaManager.generateJobSchema(['businessType'], 'en');
+      const typeDesc = schema.properties.businessType.description;
+      
+      expect(typeDesc).toContain('Product company');
+      expect(typeDesc).toContain('Consultancy');
+      expect(typeDesc).toContain('Service provider');
+    });
+
+    it('should have Italian descriptions for company summary fields', () => {
+      const schema = schemaManager.generateJobSchema(['businessType'], 'it');
+      const typeDesc = schema.properties.businessType.description;
+      
+      expect(typeDesc).toContain('Azienda di prodotto');
+      expect(typeDesc).toContain('Consulenza');
+      expect(typeDesc).toContain('Non specificato');
+    });
+  });
+
+  describe('Enhanced Web Research Integration', () => {
+    it('should generate full schema with all traditional and web research fields', () => {
+      const allFields = Object.keys(schemaManager.fieldDefinitions);
+      const schema = schemaManager.generateJobSchema(allFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(17);
+      
+      // Traditional fields
+      expect(schema.properties.jobTitle).toBeDefined();
+      expect(schema.properties.company).toBeDefined();
+      expect(schema.properties.salary).toBeDefined();
+      expect(schema.properties.location).toBeDefined();
+      expect(schema.properties.benefits).toBeDefined();
+      expect(schema.properties.requiredSkills).toBeDefined();
+      expect(schema.properties.teamCulture).toBeDefined();
+      
+      // Review fields
+      expect(schema.properties.companyReviews).toBeDefined();
+      expect(schema.properties.workLifeBalance).toBeDefined();
+      expect(schema.properties.managementQuality).toBeDefined();
+      expect(schema.properties.companyCultureReviews).toBeDefined();
+      
+      // New rating fields
+      expect(schema.properties.platformUsed).toBeDefined();
+      expect(schema.properties.overallRating).toBeDefined();
+      expect(schema.properties.reviewCount).toBeDefined();
+      
+      // New company summary fields
+      expect(schema.properties.companySize).toBeDefined();
+      expect(schema.properties.industry).toBeDefined();
+      expect(schema.properties.businessType).toBeDefined();
+    });
+
+    it('should support mixed field selection including new fields', () => {
+      const mixedFields = [
+        'jobTitle', 'company', 'companyReviews', 
+        'overallRating', 'platformUsed', 'companySize', 'businessType'
+      ];
+      const schema = schemaManager.generateJobSchema(mixedFields);
+      
+      expect(Object.keys(schema.properties)).toHaveLength(7);
+      expect(schema.required).toEqual(mixedFields);
+      
+      // Verify specific new fields are included
+      expect(schema.properties.overallRating).toBeDefined();
+      expect(schema.properties.platformUsed).toBeDefined();
+      expect(schema.properties.companySize).toBeDefined();
+      expect(schema.properties.businessType).toBeDefined();
     });
   });
 });

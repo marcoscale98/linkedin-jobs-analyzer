@@ -141,6 +141,48 @@ class SchemaManager {
           en: "Company culture observations from latest employee reviews found through web search, or 'Not specified'",
           it: "Osservazioni sulla cultura aziendale dalle ultime recensioni dei dipendenti trovate tramite ricerca web, o 'Non specificato'"
         }
+      },
+      platformUsed: {
+        type: "string",
+        description: {
+          en: "Platform used for company reviews (Glassdoor, Indeed, or other), or 'Not specified'",
+          it: "Piattaforma utilizzata per le recensioni azienda (Glassdoor, Indeed, o altra), o 'Non specificato'"
+        }
+      },
+      overallRating: {
+        type: "string",
+        description: {
+          en: "Overall company rating from review platform (e.g., '4.2/5 stars'), or 'Not specified'",
+          it: "Valutazione complessiva dell'azienda dalla piattaforma di recensioni (es. '4.2/5 stelle'), o 'Non specificato'"
+        }
+      },
+      reviewCount: {
+        type: "string",
+        description: {
+          en: "Number of reviews available on the platform (e.g., '1,250 reviews'), or 'Not specified'",
+          it: "Numero di recensioni disponibili sulla piattaforma (es. '1.250 recensioni'), o 'Non specificato'"
+        }
+      },
+      companySize: {
+        type: "string",
+        description: {
+          en: "Company size information (employees count, company scale), or 'Not specified'",
+          it: "Informazioni sulla dimensione dell'azienda (numero dipendenti, scala aziendale), o 'Non specificato'"
+        }
+      },
+      industry: {
+        type: "string",
+        description: {
+          en: "Company industry and sector information, or 'Not specified'",
+          it: "Informazioni su settore e industria dell'azienda, o 'Non specificato'"
+        }
+      },
+      businessType: {
+        type: "string",
+        description: {
+          en: "Type of business: Product company, Consultancy, Service provider, or other classification, or 'Not specified'",
+          it: "Tipo di business: Azienda di prodotto, Consulenza, Fornitore di servizi, o altra classificazione, o 'Non specificato'"
+        }
       }
     };
     
@@ -327,8 +369,36 @@ class AIServiceManager {
 
     const webSearchInstructions = hasCompanyReviews 
       ? (language === 'it' 
-          ? ` INOLTRE: Se richiesto, utilizza la ricerca web per trovare recensioni recenti dei dipendenti dell'azienda su piattaforme come Glassdoor, Indeed e altri siti di recensioni aziendali. Cerca informazioni su soddisfazione dei dipendenti, equilibrio vita-lavoro, qualità del management e cultura aziendale.`
-          : ` ADDITIONALLY: When requested, use web search to find recent employee reviews of the company from platforms like Glassdoor, Indeed, and other company review sites. Look for information about employee satisfaction, work-life balance, management quality, and company culture.`)
+          ? ` RICERCA WEB INTELLIGENTE: Quando richiesto, esegui una ricerca web strategica per l'azienda menzionata:
+
+1. CERCA SPECIFICAMENTE su Glassdoor E Indeed per l'azienda
+2. CONFRONTA la qualità e quantità dei dati di entrambe le piattaforme
+3. SCEGLI la piattaforma con più informazioni recenti e dettagliate
+4. ESTRAI dalla piattaforma scelta:
+   - Valutazione stelle complessiva (es. "4.2/5 stelle")
+   - Numero di recensioni (es. "1.250 recensioni")
+   - Piattaforma utilizzata (Glassdoor/Indeed)
+   - Soddisfazione dipendenti, equilibrio vita-lavoro, qualità management, cultura aziendale
+   - Dimensione azienda (numero dipendenti)
+   - Settore/industria
+   - Tipo di business (Prodotto/Consulenza/Servizi)
+
+IMPORTANTE: Indica chiaramente quale piattaforma hai usato e perché (più recensioni, più recenti, più dettagliate).`
+          : ` INTELLIGENT WEB SEARCH: When requested, perform strategic web search for the mentioned company:
+
+1. SEARCH SPECIFICALLY on both Glassdoor AND Indeed for the company
+2. COMPARE the quality and quantity of data from both platforms  
+3. CHOOSE the platform with more recent and detailed information
+4. EXTRACT from the chosen platform:
+   - Overall star rating (e.g., "4.2/5 stars")
+   - Review count (e.g., "1,250 reviews") 
+   - Platform used (Glassdoor/Indeed)
+   - Employee satisfaction, work-life balance, management quality, company culture
+   - Company size (employee count)
+   - Industry/sector
+   - Business type (Product/Consultancy/Services)
+
+IMPORTANT: Clearly indicate which platform you used and why (more reviews, more recent, more detailed).`)
       : '';
 
     const systemMessage = baseSystemMessage + webSearchInstructions;

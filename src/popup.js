@@ -83,6 +83,8 @@ class PopupController {
         required_skills: 'Required Skills & Experience',
         team_culture: 'Team & Company Culture',
         company_reviews: 'Company Reviews (Web Search)',
+        company_ratings: 'Star Ratings & Platform Info',
+        company_summary: 'Company Summary (Size, Industry, Type)',
         custom_placeholder: 'e.g., Focus on technical requirements and team structure',
         generate_btn: 'Generate Summary',
         analyzing: 'Analyzing job posting...',
@@ -108,6 +110,8 @@ class PopupController {
         required_skills: 'Competenze ed Esperienza Richieste',
         team_culture: 'Team e Cultura Aziendale',
         company_reviews: 'Recensioni Azienda (Ricerca Web)',
+        company_ratings: 'Valutazioni Stelle e Info Piattaforma',
+        company_summary: 'Riassunto Azienda (Dimensioni, Settore, Tipo)',
         custom_placeholder: 'es. Concentrati sui requisiti tecnici e la struttura del team',
         generate_btn: 'Genera Riassunto',
         analyzing: 'Analizzando l\'offerta di lavoro...',
@@ -470,7 +474,9 @@ Response rules:
           3: 'Benefit e Vantaggi',
           4: 'Competenze ed Esperienza Richieste',
           5: 'Team e Cultura Aziendale',
-          6: 'Recensioni Azienda (Ricerca Web)'
+          6: 'Recensioni Azienda (Ricerca Web)',
+          7: 'Valutazioni Stelle e Info Piattaforma',
+          8: 'Riassunto Azienda (Dimensioni, Settore, Tipo)'
         } : {
           0: 'Job Title & Company',
           1: 'Salary & Compensation',
@@ -478,7 +484,9 @@ Response rules:
           3: 'Benefits & Perks',
           4: 'Required Skills & Experience',
           5: 'Team & Company Culture',
-          6: 'Company Reviews (Web Search)'
+          6: 'Company Reviews (Web Search)',
+          7: 'Star Ratings & Platform Info',
+          8: 'Company Summary (Size, Industry, Type)'
         };
         sections.push(sectionMap[index]);
       }
@@ -500,7 +508,9 @@ Response rules:
           3: ['benefits'],
           4: ['requiredSkills'],
           5: ['teamCulture'],
-          6: ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
+          6: ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'],
+          7: ['platformUsed', 'overallRating', 'reviewCount'],
+          8: ['companySize', 'industry', 'businessType']
         };
         selectedFields.push(...fieldMap[index]);
       }
@@ -512,7 +522,9 @@ Response rules:
 
   hasCompanyReviewsSelected() {
     const checkboxes = document.querySelectorAll('#predefined-option input[type="checkbox"]');
-    return checkboxes[6] && checkboxes[6].checked;
+    return (checkboxes[6] && checkboxes[6].checked) || // Company Reviews
+           (checkboxes[7] && checkboxes[7].checked) || // Star Ratings & Platform Info
+           (checkboxes[8] && checkboxes[8].checked);   // Company Summary
   }
 
   getDefaultPrompt() {
@@ -682,6 +694,35 @@ ${jobText}`;
       .trim();
   }
 
+  formatStarRating(ratingText) {
+    if (!ratingText || ratingText.includes('Non specificato') || ratingText.includes('Not specified')) {
+      return ratingText;
+    }
+    
+    // Extract rating number from text like "4.2/5 stars" or "4.2"
+    const ratingMatch = ratingText.match(/(\d+\.?\d*)/);
+    if (!ratingMatch) {
+      return ratingText;
+    }
+    
+    const rating = parseFloat(ratingMatch[1]);
+    const maxStars = 5;
+    
+    // Create visual star representation
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = maxStars - fullStars - (hasHalfStar ? 1 : 0);
+    
+    let starDisplay = '⭐'.repeat(fullStars);
+    if (hasHalfStar) {
+      starDisplay += '✨'; // Half star
+    }
+    starDisplay += '☆'.repeat(emptyStars);
+    
+    // Return both visual stars and original text
+    return `${starDisplay} ${ratingText}`;
+  }
+
   formatStructuredSummary(data) {
     const translations = this.currentLanguage === 'it' ? {
       jobTitle: 'Titolo Lavoro',
@@ -694,7 +735,13 @@ ${jobText}`;
       companyReviews: 'Recensioni Azienda',
       workLifeBalance: 'Equilibrio Vita-Lavoro',
       managementQuality: 'Qualità Management',
-      companyCultureReviews: 'Cultura Aziendale (Recensioni)'
+      companyCultureReviews: 'Cultura Aziendale (Recensioni)',
+      platformUsed: 'Piattaforma Utilizzata',
+      overallRating: 'Valutazione Complessiva',
+      reviewCount: 'Numero Recensioni',
+      companySize: 'Dimensioni Azienda',
+      industry: 'Settore',
+      businessType: 'Tipo di Business'
     } : {
       jobTitle: 'Job Title',
       company: 'Company',
@@ -706,7 +753,13 @@ ${jobText}`;
       companyReviews: 'Company Reviews',
       workLifeBalance: 'Work-Life Balance',
       managementQuality: 'Management Quality',
-      companyCultureReviews: 'Company Culture (Reviews)'
+      companyCultureReviews: 'Company Culture (Reviews)',
+      platformUsed: 'Platform Used',
+      overallRating: 'Overall Rating',
+      reviewCount: 'Review Count',
+      companySize: 'Company Size',
+      industry: 'Industry',
+      businessType: 'Business Type'
     };
 
     const notSpecifiedValue = this.currentLanguage === 'it' ? 'Non specificato' : 'Not specified';
@@ -722,14 +775,43 @@ ${jobText}`;
         return '';
       }
       
-      // Special styling for company review fields
+      // Special styling for different field types
       const isReviewField = ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'].includes(field);
-      const fieldClass = isReviewField ? 'summary-field review-field' : 'summary-field';
-      const icon = isReviewField ? '🔍 ' : '';
+      const isRatingField = ['platformUsed', 'overallRating', 'reviewCount'].includes(field);
+      const isCompanySummaryField = ['companySize', 'industry', 'businessType'].includes(field);
+      
+      let fieldClass = 'summary-field';
+      let icon = '';
+      let processedValue = value;
+      
+      if (isReviewField) {
+        fieldClass += ' review-field';
+        icon = '🔍 ';
+      } else if (isRatingField) {
+        fieldClass += ' rating-field';
+        if (field === 'overallRating') {
+          icon = '⭐ ';
+          // Convert rating to visual stars if it contains numbers
+          processedValue = this.formatStarRating(value);
+        } else if (field === 'platformUsed') {
+          icon = '📊 ';
+        } else if (field === 'reviewCount') {
+          icon = '📝 ';
+        }
+      } else if (isCompanySummaryField) {
+        fieldClass += ' company-summary-field';
+        if (field === 'companySize') {
+          icon = '👥 ';
+        } else if (field === 'industry') {
+          icon = '🏢 ';
+        } else if (field === 'businessType') {
+          icon = '⚙️ ';
+        }
+      }
       
       return `<div class="${fieldClass}">
                 <span class="summary-label">${icon}${label}:</span>
-                <span class="summary-value">${value}</span>
+                <span class="summary-value">${processedValue}</span>
               </div>`;
     }).filter(html => html.length > 0).join('');
   }
@@ -742,7 +824,9 @@ ${jobText}`;
       'Benefit e Vantaggi': ['benefits'],
       'Competenze ed Esperienza Richieste': ['requiredSkills'],
       'Team e Cultura Aziendale': ['teamCulture'],
-      'Recensioni Azienda (Ricerca Web)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
+      'Recensioni Azienda (Ricerca Web)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'],
+      'Valutazioni Stelle e Info Piattaforma': ['platformUsed', 'overallRating', 'reviewCount'],
+      'Riassunto Azienda (Dimensioni, Settore, Tipo)': ['companySize', 'industry', 'businessType']
     } : {
       'Job Title & Company': ['jobTitle', 'company'],
       'Salary & Compensation': ['salary'],
@@ -750,7 +834,9 @@ ${jobText}`;
       'Benefits & Perks': ['benefits'],
       'Required Skills & Experience': ['requiredSkills'],
       'Team & Company Culture': ['teamCulture'],
-      'Company Reviews (Web Search)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews']
+      'Company Reviews (Web Search)': ['companyReviews', 'workLifeBalance', 'managementQuality', 'companyCultureReviews'],
+      'Star Ratings & Platform Info': ['platformUsed', 'overallRating', 'reviewCount'],
+      'Company Summary (Size, Industry, Type)': ['companySize', 'industry', 'businessType']
     };
     
     const fields = [];
