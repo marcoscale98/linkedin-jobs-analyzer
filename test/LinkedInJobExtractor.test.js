@@ -228,15 +228,18 @@ class LinkedInJobExtractor {
       }
     }
 
-    // If no description found, try one more time
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element && element.textContent.trim().length > 50) {
-        return element.textContent.trim();
+    // If no description found, try one more time after a brief delay
+    const tryAgain = () => {
+      for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim().length > 50) {
+          return element.textContent.trim();
+        }
       }
-    }
+      return 'Description not found';
+    };
 
-    return 'Description not found';
+    return tryAgain();
   }
 
   extractBenefits() {
