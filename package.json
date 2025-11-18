@@ -12,7 +12,7 @@
     "remove-bridge": "./dev-tools/add-console-bridge.sh remove"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "^4.0.10",
     "vitest": "^2.1.9"
   },
   "keywords": [
